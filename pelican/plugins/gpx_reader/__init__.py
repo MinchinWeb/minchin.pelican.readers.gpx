@@ -25,6 +25,9 @@ __license__ = "MIT License"
 
 
 INDENT = " " * 4
+GPX_AUTHOR = "GPX Reader"
+GPX_CATEGORY = "GPX"
+GPX_STATUS = "published"
 GPX_SIMPLIFY_DISTANCE = 5  # in meters
 GPX_SCALE = 250  # meters per pixel (approx.)
 GPX_BACKGROUND = "black"  # output image background
@@ -229,15 +232,15 @@ class GPXReader(BaseReader):
 
         metadata = {
             "title": f"GPX track for {source_file.name}",
-            "category": "GPX",
+            "category": GPX_CATEGORY,
             "date": str(first_point_datetime),
             # "tags": [
             #     "tag_a",
             #     "tag_b",
             # ],
-            "author": "GPX Reader",
+            "author": GPX_AUTHOR,
             "slug": f"{source_file.name}".replace(".", "-"),
-            "status": "published",
+            "status": GPX_STATUS,
             "gpx_start": first_point_datetime,
             "gpx_end": last_point_datetime,
             "gpx_tracks": track_count,
