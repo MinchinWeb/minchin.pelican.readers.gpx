@@ -1,0 +1,4 @@
+.venv*/
+pelican/plugins/gpx_reader/_vendor/
+test-site/output/
+test-site-*/

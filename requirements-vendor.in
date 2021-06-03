@@ -1,0 +1,6 @@
+# Requirements for pelican.plugins.gpx_reader
+#
+# This is built by the minchin.releaser.vendorize script. Do not edit it directly.
+
+osmviz
+pillow

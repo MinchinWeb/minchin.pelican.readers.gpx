@@ -1,0 +1,14 @@
+releaser:
+    module_name: pelican.plugins.gpx_reader
+    here: .
+    source: pelican
+    version: pelican/plugins/gpx_reader/__init__.py
+    test_command: none
+    version_bump: none
+    vendor_dest: pelican/plugins/gpx_reader/_vendor
+    vendor_packages:
+        heatmap:
+            src: ../heatmap
+            dest: heatmap
+            requirements: ../heatmap/requirements.txt
+    vendor_override_src: vendor_src
