@@ -215,36 +215,11 @@ class GPXReader(BaseReader):
         with pelican_open(source_file) as fn:
             gpx = gpxpy.parse(fn)
 
-        first_point_datetime = None
-        for track in gpx.tracks:
-            for segment in track.segments:
-                for point in segment.points:
-                    first_point_datetime = point.time
-                    if first_point_datetime:
-                        break
-                if first_point_datetime:
-                    break
-            if first_point_datetime:
-                break
+        latlong_bounds = gpx.get_bounds()
+        elev_bounds = gpx.get_elevation_extremes()
+        time_bounds = gpx.get_time_bounds()
 
-        if first_point_datetime is None:
-            first_point_datetime = datetime.fromtimestamp(source_file.stat().st_ctime)
-        # drop sub-seconds
-        first_point_datetime = first_point_datetime.replace(microsecond=0)
-
-        logger.debug(f"{INDENT}start date is {first_point_datetime}")
-
-        last_point_datetime = None
-        for track in reversed(gpx.tracks):
-            for segment in reversed(track.segments):
-                for point in reversed(segment.points):
-                    last_point_datetime = point.time
-                    if last_point_datetime:
-                        break
-                if last_point_datetime:
-                    break
-            if last_point_datetime:
-                break
+        logger.debug(f"{INDENT}start date is {time_bounds.start_time}")
 
         track_count = len(gpx.tracks)
         segment_count = 0
@@ -256,7 +231,8 @@ class GPXReader(BaseReader):
                 point_count += len(segment.points)
 
         logger.debug(
-            f"{INDENT}{track_count:,} track(s), {segment_count:,} segment(s), and {point_count:,} points."
+            f"{INDENT}{track_count:,} track(s), {segment_count:,} segment(s), "
+            f"and {point_count:,} points."
         )
 
         # clean from basic issues
@@ -366,7 +342,7 @@ class GPXReader(BaseReader):
         metadata = {
             "title": f"GPX track for {source_file.name}",
             "category": GPX_CATEGORY,
-            "date": str(first_point_datetime),
+            "date": str(time_bounds.start_time),
             # "tags": [
             #     "tag_a",
             #     "tag_b",
@@ -374,8 +350,14 @@ class GPXReader(BaseReader):
             "author": GPX_AUTHOR,
             "slug": f"{source_file.name}".replace(".", "-"),
             "status": GPX_STATUS,
-            "gpx_start": first_point_datetime,
-            "gpx_end": last_point_datetime,
+            "gpx_start_time": time_bounds.start_time,
+            "gpx_end_time": time_bounds.end_time,
+            "gpx_min_elevation": elev_bounds.minimum,
+            "gpx_max_elevation": elev_bounds.maximum,
+            "gpx_min_latitude": latlong_bounds.min_latitude,
+            "gpx_min_longitude": latlong_bounds.min_longitude,
+            "gpx_max_latitude": latlong_bounds.max_latitude,
+            "gpx_max_longitude": latlong_bounds.max_longitude,
             "gpx_tracks": track_count,
             "gpx_segments": segment_count,
             "gpx_points": point_count,
@@ -400,10 +382,18 @@ class GPXReader(BaseReader):
             <div class="gpx-details">
                 <p>gpx file: {source_file.name}</p>
                 <p>
-                    Runs from {first_point_datetime} to {last_point_datetime}.
-                    Contains {track_count:,} track(s), {segment_count:,} segment(s),
-                    and {point_count:,} points.
-                    Travel distance of {travel_length_km:,.1f}&nbsp;km.
+                    Runs from {metadata["gpx_start_time"]} to {metadata["gpx_end_time"]}.
+                    Contains {metadata["gpx_tracks"]:,} track(s),
+                    {metadata["gpx_segments"]:,} segment(s),
+                    and {metadata["gpx_points"]:,} points.
+                    Minimum elevation of {metadata["gpx_min_elevation"]:,.1f} m and
+                    maximum of  {metadata["gpx_max_elevation"]:,.1f} m.
+                    Latitude and longitude bounds of
+                    {abs(metadata["gpx_min_latitude"]):.3f}&deg;{'N' if metadata["gpx_min_latitude"] >= 0 else 'S'},
+                    {abs(metadata["gpx_min_longitude"]):.3f}&deg;{'E' if metadata["gpx_min_longitude"] >= 0 else 'W'} and 
+                    {abs(metadata["gpx_max_latitude"]):.3f}&deg;{'N' if metadata["gpx_max_latitude"] >= 0 else 'S'},
+                    {abs(metadata["gpx_max_longitude"]):.3f}&deg;{'E' if metadata["gpx_max_longitude"] >= 0 else 'W'}.
+                    Travel distance of {metadata["gpx_length_km"]:,.1f}&nbsp;km.
                 </p>
             </div>
         """
