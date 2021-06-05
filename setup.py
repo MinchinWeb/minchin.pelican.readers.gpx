@@ -46,6 +46,7 @@ INSTALL_REQUIRES = [
         "pelican",
         "gpxpy",
         "lxml",  # speed up gpxpy
+        "timezonefinder[numba]",
         # also vendorized heatmap -- https://github.com/sethoscope/heatmap
         "osmviz",
         "pillow",

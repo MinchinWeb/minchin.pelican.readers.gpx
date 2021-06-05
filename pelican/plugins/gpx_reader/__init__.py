@@ -1,19 +1,16 @@
-import logging
 from datetime import datetime
+import logging
 from pathlib import Path
+
+import gpxpy
+from pytz import timezone
+from timezonefinder import TimezoneFinder
 
 from pelican import signals
 from pelican.readers import BaseReader
 from pelican.utils import pelican_open
 
-try:
-    import gpxpy
-
-    from ._vendor.heatmap import heatmap
-except ImportError:
-    heatmap = None
-    gpxpy = None
-
+from ._vendor.heatmap import heatmap
 
 __title__ = "pelican.plugins.gpx_reader"
 __version__ = "0.1.0+dev.0"
@@ -168,7 +165,6 @@ class MergedConfiguration:
 
 
 class GPXReader(BaseReader):
-
     # can test for project requirements before enabling
     if heatmap:
         enabled = True
@@ -339,10 +335,25 @@ class GPXReader(BaseReader):
             #     "data:image/png;base64,", encoding="utf-8"
             # ) + base64.b64encode(heatmap_image_buffer.getvalue())
 
+        # adjust for timezones
+        tz_finder = TimezoneFinder()
+
+        first_point = gpx.tracks[0].segments[0].points[0]
+        tz_start = timezone(
+            tz_finder.timezone_at(lng=first_point.longitude, lat=first_point.latitude)
+        )
+        start_time = time_bounds.start_time.astimezone(tz_start)
+
+        last_point = gpx.tracks[-1].segments[-1].points[-1]
+        tz_end = timezone(
+            tz_finder.timezone_at(lng=last_point.longitude, lat=last_point.latitude)
+        )
+        end_time = time_bounds.end_time.astimezone(tz_end)
+
         metadata = {
             "title": f"GPX track for {source_file.name}",
             "category": GPX_CATEGORY,
-            "date": str(time_bounds.start_time),
+            "date": str(start_time),
             # "tags": [
             #     "tag_a",
             #     "tag_b",
@@ -382,7 +393,7 @@ class GPXReader(BaseReader):
             <div class="gpx-details">
                 <p>gpx file: {source_file.name}</p>
                 <p>
-                    Runs from {metadata["gpx_start_time"]} to {metadata["gpx_end_time"]}.
+                    Runs from {start_time} to {end_time}.
                     Contains {metadata["gpx_tracks"]:,} track(s),
                     {metadata["gpx_segments"]:,} segment(s),
                     and {metadata["gpx_points"]:,} points.
