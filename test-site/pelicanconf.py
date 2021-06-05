@@ -32,3 +32,13 @@ DEFAULT_PAGINATION = 10
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
+
+
+GPX_BACKGROUND = "white"
+GPX_HEATMAPS = {
+    "default": None,
+    "tahiti": {
+        "extent": "-17, -150, -18, -149",
+        "background": "black",
+    }
+}
