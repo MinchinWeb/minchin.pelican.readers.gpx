@@ -29,7 +29,7 @@ def find_meta(*meta_file_parts, meta_key):
 ##############################################################################
 #                          PACKAGE METADATA                                  #
 ##############################################################################
-META_PATH = ["pelican", "plugins", "gpx_reader", "__init__.py"]
+META_PATH = ["pelican", "plugins", "gpx_reader", "constants.py"]
 
 NAME = find_meta(*META_PATH, meta_key="title").lower()
 VERSION = find_meta(*META_PATH, meta_key="version")

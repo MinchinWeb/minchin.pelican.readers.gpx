@@ -11,157 +11,11 @@ from pelican.readers import BaseReader
 from pelican.utils import pelican_open
 
 from ._vendor.heatmap import heatmap
-
-__title__ = "pelican.plugins.gpx_reader"
-__version__ = "0.1.0+dev.1"
-__description__ = "GPX Reader for Pelican"
-__author__ = "William Minchin"
-__email__ = "w_minchin@hotmail.com"
-__url__ = "https://github.com/MinchinWeb/gpx_reader"
-__license__ = "MIT License"
-
-
-INDENT = " " * 4
-GPX_AUTHOR = "GPX Reader"
-GPX_CATEGORY = "GPX"
-GPX_STATUS = "published"
-GPX_OUTPUT_FOLDER = "gpx"
-GPX_SIMPLIFY_DISTANCE = 5  # in meters
-GPX_HEATMAPS = {"default": dict()}
-
-# per heatmap
-GPX_SCALE = 250  # meters per pixel (approx.)
-GPX_BACKGROUND = "black"  # output image background
-GPX_DECAY = 0.81  # between [0..1]
-GPX_RADIUS = 3  # point radius, default is 5
-GPX_KERNEL = "linear"
-GPX_PROJECTION = "mercator"
-GPX_GRADIENT = None
-if heatmap:
-    GPX_HSVA_MIN = heatmap.ColorMap().DEFAULT_HSVA_MIN_STR
-    GPX_HSVA_MAX = heatmap.ColorMap().DEFAULT_HSVA_MAX_STR
-else:
-    GPX_HSVA_MIN = None
-    GPX_HSVA_MAX = None
-GPX_EXTENT = None
-GPX_BACKGROUND_IMAGE = None
+from .initialize import check_settings
+from .constants import __version__, INDENT, LOG_PREFIX
 
 
 logger = logging.getLogger(__name__)
-
-
-class MergedConfiguration:
-    def __init__(self, pelican_settings=None):
-        if pelican_settings is None:
-            pelican_settings = dict()
-
-        if "GPX_AUTHOR" in pelican_settings.keys():
-            self.author = pelican_settings["GPX_AUTHOR"]
-        else:
-            self.author = GPX_AUTHOR
-
-        if "GPX_CATEGORY" in pelican_settings.keys():
-            self.category = pelican_settings["GPX_CATEGORY"]
-        else:
-            self.category = GPX_CATEGORY
-
-        if "GPX_STATUS" in pelican_settings.keys():
-            self.status = pelican_settings["GPX_STATUS"]
-        else:
-            self.status = GPX_STATUS
-
-        if "GPX_OUTPUT_FOLDER" in pelican_settings.keys():
-            self.output_folder = pelican_settings["GPX_OUTPUT_FOLDER"]
-        else:
-            self.output_folder = GPX_OUTPUT_FOLDER
-
-        if "GPX_SIMPLIFY_DISTANCE" in pelican_settings.keys():
-            self.simplify_distance = pelican_settings["GPX_SIMPLIFY_DISTANCE"]
-        else:
-            self.simplify_distance = GPX_SIMPLIFY_DISTANCE
-
-        if "GPX_HEATMAPS" in pelican_settings.keys():
-            self.heatmaps = pelican_settings["GPX_HEATMAPS"]
-        else:
-            self.heatmaps = GPX_HEATMAPS
-
-        # print(self.heatmaps)
-
-        # per heatmap settings
-        for k in self.heatmaps.keys():
-            if self.heatmaps[k] is None:
-                self.heatmaps[k] = dict()
-
-            if not "scale" in self.heatmaps[k].keys():
-                if "GPX_SCALE" in pelican_settings.keys():
-                    self.heatmaps[k]["scale"] = pelican_settings["GPX_SCALE"]
-                else:
-                    self.heatmaps[k]["scale"] = GPX_SCALE
-
-            if not "background" in self.heatmaps[k].keys():
-                if "GPX_BACKGROUND" in pelican_settings.keys():
-                    self.heatmaps[k]["background"] = pelican_settings["GPX_BACKGROUND"]
-                else:
-                    self.heatmaps[k]["background"] = GPX_BACKGROUND
-
-            if not "decay" in self.heatmaps[k].keys():
-                if "GPX_DECAY" in pelican_settings.keys():
-                    self.heatmaps[k]["decay"] = pelican_settings["GPX_DECAY"]
-                else:
-                    self.heatmaps[k]["decay"] = GPX_DECAY
-
-            if not "radius" in self.heatmaps[k].keys():
-
-                if "GPX_RADIUS" in pelican_settings.keys():
-                    self.heatmaps[k]["radius"] = pelican_settings["GPX_RADIUS"]
-                else:
-                    self.heatmaps[k]["radius"] = GPX_RADIUS
-
-            if not "kernel" in self.heatmaps[k].keys():
-                if "GPX_KERNEL" in pelican_settings.keys():
-                    self.heatmaps[k]["kernel"] = pelican_settings["GPX_KERNEL"]
-                else:
-                    self.heatmaps[k]["kernel"] = GPX_KERNEL
-
-            if not "projection" in self.heatmaps[k].keys():
-                if "GPX_PROJECTION" in pelican_settings.keys():
-                    self.heatmaps[k]["projection"] = pelican_settings["GPX_PROJECTION"]
-                else:
-                    self.heatmaps[k]["projection"] = GPX_PROJECTION
-
-            if not "gradient" in self.heatmaps[k].keys():
-                if "GPX_GRADIENT" in pelican_settings.keys():
-                    self.heatmaps[k]["gradient"] = pelican_settings["GPX_GRADIENT"]
-                else:
-                    self.heatmaps[k]["gradient"] = GPX_GRADIENT
-
-            if not "hsva_min" in self.heatmaps[k].keys():
-                if "GPX_HSVA_MIN" in pelican_settings.keys():
-                    self.heatmaps[k]["hsva_min"] = pelican_settings["GPX_HSVA_MIN"]
-                else:
-                    self.heatmaps[k]["hsva_min"] = GPX_HSVA_MIN
-
-            if not "hsva_max" in self.heatmaps[k].keys():
-                if "GPX_HSVA_MAX" in pelican_settings.keys():
-                    self.heatmaps[k]["hsva_max"] = pelican_settings["GPX_HSVA_MAX"]
-                else:
-                    self.heatmaps[k]["hsva_max"] = GPX_HSVA_MAX
-
-            if not "extent" in self.heatmaps[k].keys():
-                if "GPX_EXTENT" in pelican_settings.keys():
-                    self.heatmaps[k]["extent"] = pelican_settings["GPX_EXTENT"]
-                else:
-                    self.heatmaps[k]["extent"] = GPX_EXTENT
-
-            if not "background_image" in self.heatmaps[k].keys():
-                if "GPX_BACKGROUND_IMAGE" in pelican_settings.keys():
-                    self.heatmaps[k]["background_image"] = pelican_settings[
-                        "GPX_BACKGROUND_IMAGE"
-                    ]
-                else:
-                    self.heatmaps[k]["background_image"] = GPX_BACKGROUND_IMAGE
-
-        # print(self.heatmaps)
 
 
 class heatmap_options_base(object):
@@ -217,14 +71,14 @@ def clean_gpx(gpx):  # clean from basic issues
     return gpx
 
 
-def simplify_gpx(gpx, gpx_settings):
+def simplify_gpx(gpx, pelican_settings):
     # see GPXTrackSegment.simplify(self, max_distance=None)
     #   max_distance is the distance from the simplified line
     # uses http://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
     for i2, track in enumerate(gpx.tracks):
         for i3, segment in enumerate(track.segments):
             in_points = len(segment.points)
-            segment.simplify(max_distance=gpx_settings.simplify_distance)
+            segment.simplify(max_distance=pelican_settings["GPX_SIMPLIFY_DISTANCE"])
             out_points = len(segment.points)
             cut = in_points - out_points
             if cut > 0:
@@ -261,7 +115,7 @@ def generate_heatmap(gpx_file_in, heatmap_image_out, heatmap_raw_settings):
     # return heatmap_image_b64
 
 
-def generate_metadata(gpx, source_file, gpx_settings, gpx_file_out):
+def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
     tz_finder = TimezoneFinder()
 
     latlong_bounds = gpx.get_bounds()
@@ -301,15 +155,15 @@ def generate_metadata(gpx, source_file, gpx_settings, gpx_file_out):
 
     metadata = {
         "title": f"GPX track for {source_file.name}",
-        "category": gpx_settings.category,
+        "category": pelican_settings["GPX_CATEGORY"],
         "date": str(start_time),
         # "tags": [
         #     "tag_a",
         #     "tag_b",
         # ],
-        "author": gpx_settings.author,
+        "author": pelican_settings["GPX_AUTHOR"],
         "slug": f"{source_file.name}".replace(".", "-"),
-        "status": gpx_settings.status,
+        "status": pelican_settings["GPX_STATUS"],
         "gpx_start_time": time_bounds.start_time,
         "gpx_end_time": time_bounds.end_time,
         "gpx_min_elevation": elev_bounds.minimum,
@@ -322,13 +176,15 @@ def generate_metadata(gpx, source_file, gpx_settings, gpx_file_out):
         "gpx_segments": segment_count,
         "gpx_points": point_count,
         "gpx_length_km": travel_length_km,
-        "gpx_cleaned_file": f"{gpx_settings.output_folder}/{gpx_file_out.name}",
+        "gpx_cleaned_file": f'{pelican_settings["GPX_OUTPUT_FOLDER"]}/{gpx_file_out.name}',
         # "gpx_image_b64": heatmap_image_b64,
     }
 
-    for k in gpx_settings.heatmaps.keys():
+    for k in pelican_settings["GPX_HEATMAPS"].keys():
         image_key = f"gpx_{k}_image"
-        metadata[image_key] = f"{gpx_settings.output_folder}/{k}/{source_file.stem}.png"
+        metadata[
+            image_key
+        ] = f'{pelican_settings["GPX_OUTPUT_FOLDER"]}/{k}/{source_file.stem}.png'
 
     return metadata, start_time, end_time
 
@@ -338,38 +194,38 @@ class GPXReader(BaseReader):
     if heatmap:
         enabled = True
         logger.info(
-            "[GPX Reader] enabled, version %s, heatmap version %s"
-            % (__version__, heatmap.__version__)
+            "%s enabled, version %s, heatmap version %s"
+            % (LOG_PREFIX, __version__, heatmap.__version__)
         )
     else:
         enabled = False
-        logger.warn("[GPX Reader] disabled, version %s" % __version__)
+        logger.warn("%s disabled, version %s" % (LOG_PREFIX, __version__))
 
     file_extensions = [
         "gpx",
     ]
 
     def read(self, source_filename):
-        logger.debug("[GPX Reader] file: %s" % source_filename)
+        logger.debug("%s file: %s" % (LOG_PREFIX, source_filename))
 
-        gpx_settings = MergedConfiguration(self.settings)
+        # gpx_settings = MergedConfiguration(self.settings)
 
         source_file = Path(source_filename).resolve()
 
         gpx_file_out = (
             Path().cwd()
-            / (self.settings["OUTPUT_PATH"])
-            / gpx_settings.output_folder
-            / (f"{source_file.stem}-cleaned.gpx")
+            / self.settings["OUTPUT_PATH"]
+            / self.settings["GPX_OUTPUT_FOLDER"]
+            / f"{source_file.stem}-cleaned.gpx"
         )
 
         # create gpx and image output folder if needed
         gpx_file_out.parent.mkdir(exist_ok=True)
-        for k in gpx_settings.heatmaps.keys():
+        for k in self.settings["GPX_HEATMAPS"].keys():
             heatmap_folder = (
                 Path().cwd()
-                / (self.settings["OUTPUT_PATH"])
-                / gpx_settings.output_folder
+                / self.settings["OUTPUT_PATH"]
+                / self.settings["GPX_OUTPUT_FOLDER"]
                 / k
             )
             heatmap_folder.mkdir(exist_ok=True)
@@ -379,31 +235,31 @@ class GPXReader(BaseReader):
             gpx = gpxpy.parse(fn)
 
         clean_gpx(gpx)
-        simplify_gpx(gpx, gpx_settings)
+        simplify_gpx(gpx, self.settings)
 
         logger.debug(f"{INDENT}GPX cleaned file at {gpx_file_out}")
         with gpx_file_out.open(mode="w") as fn:
             print(gpx.to_xml(), file=fn)
 
-        for k in gpx_settings.heatmaps.keys():
+        for k in self.settings["GPX_HEATMAPS"].keys():
             heatmap_image_out = (
                 Path().cwd()
-                / (self.settings["OUTPUT_PATH"])
-                / gpx_settings.output_folder
+                / self.settings["OUTPUT_PATH"]
+                / self.settings["GPX_OUTPUT_FOLDER"]
                 / k
-                / (f"{source_file.stem}.png")
+                / f"{source_file.stem}.png"
             )
 
             generate_heatmap(
                 gpx_file_in=gpx_file_out,
                 heatmap_image_out=heatmap_image_out,
-                heatmap_raw_settings=gpx_settings.heatmaps[k],
+                heatmap_raw_settings=self.settings["GPX_HEATMAPS"][k],
             )
 
         metadata, start_time, end_time = generate_metadata(
             gpx=gpx,
             source_file=source_file,
-            gpx_settings=gpx_settings,
+            pelican_settings=self.settings,
             gpx_file_out=gpx_file_out,
         )
 
@@ -433,10 +289,10 @@ class GPXReader(BaseReader):
             </div>
         """
 
-        for k in gpx_settings.heatmaps.keys():
+        for k in self.settings["GPX_HEATMAPS"].keys():
             content += f"""
             <div class="gpx-image gpx-image-{k}">
-                <img src="{self.settings["SITEURL"]}/{gpx_settings.output_folder}/{k}/{source_file.stem}.png" alt="{k} GPX track for {source_file.name}" />
+                <img src="{self.settings["SITEURL"]}/{self.settings["GPX_OUTPUT_FOLDER"]}/{k}/{source_file.stem}.png" alt="{k} GPX track for {source_file.name}" />
             </div>
         """
 
@@ -452,4 +308,6 @@ def add_reader(readers):
 
 
 def register():
+    """Register the plugin pieces with Pelican."""
+    signals.initialized.connect(check_settings)
     signals.readers_init.connect(add_reader)
