@@ -13,7 +13,7 @@ from pelican.utils import pelican_open
 from ._vendor.heatmap import heatmap
 
 __title__ = "pelican.plugins.gpx_reader"
-__version__ = "0.1.0+dev.0"
+__version__ = "0.1.0+dev.1"
 __description__ = "GPX Reader for Pelican"
 __author__ = "William Minchin"
 __email__ = "w_minchin@hotmail.com"
@@ -164,6 +164,175 @@ class MergedConfiguration:
         # print(self.heatmaps)
 
 
+class heatmap_options_base(object):
+    def __init__(self, heatmap_settings):
+        self.scale = heatmap_settings["scale"]
+        self.background = heatmap_settings["background"]
+        self.decay = heatmap_settings["decay"]
+        self.radius = heatmap_settings["radius"]
+        # self.kernel= heatmap.LinearKernel
+        # self.extent=
+        self.filetype = "gpx"
+
+        ## defaults
+        self.kernel = heatmap_settings["kernel"]
+        self.projection = heatmap_settings["projection"]
+        self.gradient = heatmap_settings["gradient"]
+        self.hsva_min = heatmap_settings["hsva_min"]
+        self.hsva_max = heatmap_settings["hsva_max"]
+        self.points = None
+        self.gpx = None
+        self.csv = None
+        self.shp_file = None
+        self.extent = heatmap_settings["extent"]
+        self.background_image = heatmap_settings["background_image"]
+
+
+def clean_gpx(gpx):  # clean from basic issues
+    for track in gpx.tracks:
+        for segment in track.segments:
+            cut_index = []
+            for index, point in enumerate(segment.points):
+                # Clear away points without a date (actually 1970-1-1)
+                if point.time == datetime(1970, 1, 1):
+                    cut_index.append(index)
+
+                # Clear point if at 0N 0E
+                if point.latitude == 0 and point.longitude == 0:
+                    cut_index.append(index)
+
+                # <src>network</src>
+                if point.source == "network":
+                    cut_index.append(index)
+
+            # remove duplicates
+            cut_index = list(set(cut_index))
+            # remove points from the end of the list first
+            cut_index.sort(reverse=True)
+            for index in cut_index:
+                segment.remove_point(index)
+
+    logger.debug(f"{INDENT}{len(cut_index):,} 'bad' points dropped.")
+
+    return gpx
+
+
+def simplify_gpx(gpx, gpx_settings):
+    # see GPXTrackSegment.simplify(self, max_distance=None)
+    #   max_distance is the distance from the simplified line
+    # uses http://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+    for i2, track in enumerate(gpx.tracks):
+        for i3, segment in enumerate(track.segments):
+            in_points = len(segment.points)
+            segment.simplify(max_distance=gpx_settings.simplify_distance)
+            out_points = len(segment.points)
+            cut = in_points - out_points
+            if cut > 0:
+                logger.debug(f"{INDENT}{i2},{i3} - Simplified, {cut:,} points removed.")
+
+    return gpx
+
+
+def generate_heatmap(gpx_file_in, heatmap_image_out, heatmap_raw_settings):
+    # hide heatmap logging calls
+    old_logging_level = logging.getLogger().getEffectiveLevel()
+    logging.getLogger().setLevel(logging.WARNING)
+
+    heatmap_config = heatmap.Configuration()
+    heatmap_options = heatmap_options_base(heatmap_raw_settings)
+    heatmap_options.files = [
+        str(gpx_file_in.resolve()),
+    ]
+    heatmap_config.set_from_options(options=heatmap_options)
+    heatmap_config.fill_missing()
+    heatmap_matrix = heatmap.process_shapes(heatmap_config)
+    heatmap_matrix = heatmap_matrix.finalized()
+    heatmap_image = heatmap.ImageMaker(heatmap_config).make_image(heatmap_matrix)
+    # reset logging level
+    logging.getLogger().setLevel(old_logging_level)
+    logger.debug(f"{INDENT}Heatmap file at {heatmap_image_out}")
+
+    heatmap_image.save(heatmap_image_out, format="png")
+    # heatmap_image_buffer = BytesIO()
+    # heatmap_image.save(heatmap_image_buffer, format="png")
+    # heatmap_image_b64 = bytes(
+    #     "data:image/png;base64,", encoding="utf-8"
+    # ) + base64.b64encode(heatmap_image_buffer.getvalue())
+    # return heatmap_image_b64
+
+
+def generate_metadata(gpx, source_file, gpx_settings, gpx_file_out):
+    tz_finder = TimezoneFinder()
+
+    latlong_bounds = gpx.get_bounds()
+    elev_bounds = gpx.get_elevation_extremes()
+    time_bounds = gpx.get_time_bounds()
+
+    logger.debug(f"{INDENT}start date is {time_bounds.start_time}")
+
+    track_count = len(gpx.tracks)
+    segment_count = 0
+    point_count = 0
+
+    for track in gpx.tracks:
+        segment_count += len(track.segments)
+        for segment in track.segments:
+            point_count += len(segment.points)
+
+    logger.debug(
+        f"{INDENT}{track_count:,} track(s), {segment_count:,} segment(s), "
+        f"and {point_count:,} points."
+    )
+
+    travel_length_km = gpx.length_2d() / 1000
+    logger.debug(f"{INDENT}travel length: {travel_length_km:,.1f} km")
+
+    first_point = gpx.tracks[0].segments[0].points[0]
+    tz_start = timezone(
+        tz_finder.timezone_at(lng=first_point.longitude, lat=first_point.latitude)
+    )
+    start_time = time_bounds.start_time.astimezone(tz_start)
+
+    last_point = gpx.tracks[-1].segments[-1].points[-1]
+    tz_end = timezone(
+        tz_finder.timezone_at(lng=last_point.longitude, lat=last_point.latitude)
+    )
+    end_time = time_bounds.end_time.astimezone(tz_end)
+
+    metadata = {
+        "title": f"GPX track for {source_file.name}",
+        "category": gpx_settings.category,
+        "date": str(start_time),
+        # "tags": [
+        #     "tag_a",
+        #     "tag_b",
+        # ],
+        "author": gpx_settings.author,
+        "slug": f"{source_file.name}".replace(".", "-"),
+        "status": gpx_settings.status,
+        "gpx_start_time": time_bounds.start_time,
+        "gpx_end_time": time_bounds.end_time,
+        "gpx_min_elevation": elev_bounds.minimum,
+        "gpx_max_elevation": elev_bounds.maximum,
+        "gpx_min_latitude": latlong_bounds.min_latitude,
+        "gpx_min_longitude": latlong_bounds.min_longitude,
+        "gpx_max_latitude": latlong_bounds.max_latitude,
+        "gpx_max_longitude": latlong_bounds.max_longitude,
+        "gpx_tracks": track_count,
+        "gpx_segments": segment_count,
+        "gpx_points": point_count,
+        "gpx_length_km": travel_length_km,
+        "gpx_cleaned_file": f"{gpx_settings.output_folder}/{gpx_file_out.name}",
+        # "gpx_image_b64": heatmap_image_b64,
+    }
+
+    for k in gpx_settings.heatmaps.keys():
+        image_key = f"gpx_{k}_image"
+        metadata[image_key] = f"{gpx_settings.output_folder}/{k}/{source_file.stem}.png"
+
+    return metadata, start_time, end_time
+
+
 class GPXReader(BaseReader):
     # can test for project requirements before enabling
     if heatmap:
@@ -211,100 +380,14 @@ class GPXReader(BaseReader):
         with pelican_open(source_file) as fn:
             gpx = gpxpy.parse(fn)
 
-        latlong_bounds = gpx.get_bounds()
-        elev_bounds = gpx.get_elevation_extremes()
-        time_bounds = gpx.get_time_bounds()
-
-        logger.debug(f"{INDENT}start date is {time_bounds.start_time}")
-
-        track_count = len(gpx.tracks)
-        segment_count = 0
-        point_count = 0
-
-        for track in gpx.tracks:
-            segment_count += len(track.segments)
-            for segment in track.segments:
-                point_count += len(segment.points)
-
-        logger.debug(
-            f"{INDENT}{track_count:,} track(s), {segment_count:,} segment(s), "
-            f"and {point_count:,} points."
-        )
-
-        # clean from basic issues
-        for track in gpx.tracks:
-            for segment in track.segments:
-                cut_index = []
-                for index, point in enumerate(segment.points):
-                    # Clear away points without a date (actually 1970-1-1)
-                    if point.time == datetime(1970, 1, 1):
-                        cut_index.append(index)
-
-                    # Clear point if at 0N 0E
-                    if point.latitude == 0 and point.longitude == 0:
-                        cut_index.append(index)
-
-                    # <src>network</src>
-                    if point.source == "network":
-                        cut_index.append(index)
-
-                # remove duplicates
-                cut_index = list(set(cut_index))
-                # remove points from the end of the list first
-                cut_index.sort(reverse=True)
-                for index in cut_index:
-                    segment.remove_point(index)
-
-        logger.debug(f"{INDENT}{len(cut_index):,} 'bad' points dropped.")
-
-        # see GPXTrackSegment.simplify(self, max_distance=None)
-        #   max_distance is the distance from the simplified line
-        # uses http://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
-        for i2, track in enumerate(gpx.tracks):
-            for i3, segment in enumerate(track.segments):
-                in_points = len(segment.points)
-                segment.simplify(max_distance=gpx_settings.simplify_distance)
-                out_points = len(segment.points)
-                cut = in_points - out_points
-                if cut > 0:
-                    logger.debug(
-                        f"{INDENT}{i2},{i3} - Simplified, {cut:,} points removed."
-                    )
-
-        travel_length_km = gpx.length_2d() / 1000
-        logger.debug(f"{INDENT}travel length: {travel_length_km:,.1f} km")
+        clean_gpx(gpx)
+        simplify_gpx(gpx, gpx_settings)
 
         logger.debug(f"{INDENT}GPX cleaned file at {gpx_file_out}")
         with gpx_file_out.open(mode="w") as fn:
             print(gpx.to_xml(), file=fn)
 
-        class heatmap_options_base(object):
-            def __init__(self, heatmap_settings):
-                self.scale = heatmap_settings["scale"]
-                self.background = heatmap_settings["background"]
-                self.decay = heatmap_settings["decay"]
-                self.radius = heatmap_settings["radius"]
-                # self.kernel= heatmap.LinearKernel
-                # self.extent=
-                self.filetype = "gpx"
-
-                ## defaults
-                self.kernel = heatmap_settings["kernel"]
-                self.projection = heatmap_settings["projection"]
-                self.gradient = heatmap_settings["gradient"]
-                self.hsva_min = heatmap_settings["hsva_min"]
-                self.hsva_max = heatmap_settings["hsva_max"]
-                self.points = None
-                self.gpx = None
-                self.csv = None
-                self.shp_file = None
-                self.extent = heatmap_settings["extent"]
-                self.background_image = heatmap_settings["background_image"]
-
         for k in gpx_settings.heatmaps.keys():
-            # hide heatmap logging calls
-            old_logging_level = logging.getLogger().getEffectiveLevel()
-            logging.getLogger().setLevel(logging.WARNING)
             heatmap_image_out = (
                 Path().cwd()
                 / (self.settings["OUTPUT_PATH"])
@@ -313,75 +396,18 @@ class GPXReader(BaseReader):
                 / (f"{source_file.stem}.png")
             )
 
-            heatmap_config = heatmap.Configuration()
-            heatmap_options = heatmap_options_base(gpx_settings.heatmaps[k])
-            heatmap_options.files = [
-                str(gpx_file_out.resolve()),
-            ]
-            heatmap_config.set_from_options(options=heatmap_options)
-            heatmap_config.fill_missing()
-            heatmap_matrix = heatmap.process_shapes(heatmap_config)
-            heatmap_matrix = heatmap_matrix.finalized()
-            heatmap_image = heatmap.ImageMaker(heatmap_config).make_image(
-                heatmap_matrix
+            generate_heatmap(
+                gpx_file_in=gpx_file_out,
+                heatmap_image_out=heatmap_image_out,
+                heatmap_raw_settings=gpx_settings.heatmaps[k],
             )
-            # reset logging level
-            logging.getLogger().setLevel(old_logging_level)
-            logger.debug(f"{INDENT}Heatmap file at {heatmap_image_out}")
-            heatmap_image.save(heatmap_image_out, format="png")
-            # heatmap_image_buffer = BytesIO()
-            # heatmap_image.save(heatmap_image_buffer, format="png")
-            # heatmap_image_b64 = bytes(
-            #     "data:image/png;base64,", encoding="utf-8"
-            # ) + base64.b64encode(heatmap_image_buffer.getvalue())
 
-        # adjust for timezones
-        tz_finder = TimezoneFinder()
-
-        first_point = gpx.tracks[0].segments[0].points[0]
-        tz_start = timezone(
-            tz_finder.timezone_at(lng=first_point.longitude, lat=first_point.latitude)
+        metadata, start_time, end_time = generate_metadata(
+            gpx=gpx,
+            source_file=source_file,
+            gpx_settings=gpx_settings,
+            gpx_file_out=gpx_file_out,
         )
-        start_time = time_bounds.start_time.astimezone(tz_start)
-
-        last_point = gpx.tracks[-1].segments[-1].points[-1]
-        tz_end = timezone(
-            tz_finder.timezone_at(lng=last_point.longitude, lat=last_point.latitude)
-        )
-        end_time = time_bounds.end_time.astimezone(tz_end)
-
-        metadata = {
-            "title": f"GPX track for {source_file.name}",
-            "category": GPX_CATEGORY,
-            "date": str(start_time),
-            # "tags": [
-            #     "tag_a",
-            #     "tag_b",
-            # ],
-            "author": GPX_AUTHOR,
-            "slug": f"{source_file.name}".replace(".", "-"),
-            "status": GPX_STATUS,
-            "gpx_start_time": time_bounds.start_time,
-            "gpx_end_time": time_bounds.end_time,
-            "gpx_min_elevation": elev_bounds.minimum,
-            "gpx_max_elevation": elev_bounds.maximum,
-            "gpx_min_latitude": latlong_bounds.min_latitude,
-            "gpx_min_longitude": latlong_bounds.min_longitude,
-            "gpx_max_latitude": latlong_bounds.max_latitude,
-            "gpx_max_longitude": latlong_bounds.max_longitude,
-            "gpx_tracks": track_count,
-            "gpx_segments": segment_count,
-            "gpx_points": point_count,
-            "gpx_length_km": travel_length_km,
-            "gpx_cleaned_file": f"{gpx_settings.output_folder}/{gpx_file_out.name}",
-            # "gpx_image_b64": heatmap_image_b64,
-        }
-
-        for k in gpx_settings.heatmaps.keys():
-            image_key = f"gpx_{k}_image"
-            metadata[
-                image_key
-            ] = f"{gpx_settings.output_folder}/{k}/{source_file.stem}.png"
 
         parsed_metadata = {}
         for key, value in metadata.items():
