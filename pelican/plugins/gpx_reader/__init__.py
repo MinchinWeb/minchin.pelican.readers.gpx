@@ -337,19 +337,17 @@ class GPXReader(BaseReader):
     # can test for project requirements before enabling
     if heatmap:
         enabled = True
-        logger.info("[GPX Reader] enabled, heatmap version %s" % heatmap.__version__)
+        logger.info(
+            "[GPX Reader] enabled, version %s, heatmap version %s"
+            % (__version__, heatmap.__version__)
+        )
     else:
         enabled = False
-        logger.warn("[GPX Reader] disabled")
+        logger.warn("[GPX Reader] disabled, version %s" % __version__)
 
     file_extensions = [
         "gpx",
     ]
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     settings = self.settings['GPX']
-    #     # settings.setdefault('extensions', [])
 
     def read(self, source_filename):
         logger.debug("[GPX Reader] file: %s" % source_filename)
