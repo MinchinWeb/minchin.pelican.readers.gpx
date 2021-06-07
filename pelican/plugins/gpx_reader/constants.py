@@ -1,4 +1,8 @@
+import logging
+
 from ._vendor.heatmap import heatmap
+
+logger = logging.getLogger(__name__)
 
 __title__ = "pelican.plugins.gpx_reader"
 __version__ = "0.1.0+dev.1"
@@ -34,3 +38,17 @@ else:
     GPX_HSVA_MAX = None
 GPX_EXTENT = None
 GPX_BACKGROUND_IMAGE = None
+
+
+def test_enabled(log=True):
+    if heatmap:
+        if log:
+            logger.info(
+                "%s enabled, version %s, heatmap version %s"
+                % (LOG_PREFIX, __version__, heatmap.__version__)
+            )
+        return True
+    else:
+        if log:
+            logger.warn("%s disabled, version %s" % (LOG_PREFIX, __version__))
+        return False
