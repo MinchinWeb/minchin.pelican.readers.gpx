@@ -35,7 +35,7 @@ class GPXReader(BaseReader):
         )
 
         # create gpx and image output folder if needed
-        gpx_file_out.parent.mkdir(exist_ok=True)
+        gpx_file_out.parent.mkdir(exist_ok=True, parents=True)
         for k in self.settings["GPX_HEATMAPS"].keys():
             heatmap_folder = (
                 Path().cwd()
