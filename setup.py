@@ -34,7 +34,7 @@ META_PATH = ["pelican", "plugins", "gpx_reader", "constants.py"]
 NAME = find_meta(*META_PATH, meta_key="title").lower()
 VERSION = find_meta(*META_PATH, meta_key="version")
 SHORT_DESC = find_meta(*META_PATH, meta_key="description")
-LONG_DESC = read("readme.rst")
+LONG_DESC = read("README.rst")
 AUTHOR = find_meta(*META_PATH, meta_key="author")
 AUTHOR_EMAIL = find_meta(*META_PATH, meta_key="email")
 URL = find_meta(*META_PATH, meta_key="url")
@@ -46,7 +46,7 @@ INSTALL_REQUIRES = [
         "pelican",
         "gpxpy",
         "lxml",  # speed up gpxpy
-        "timezonefinder[numba]",
+        # "timezonefinder[numba]",  ## TODO: make optional, 45MB
         # also vendorized heatmap -- https://github.com/sethoscope/heatmap
         "osmviz",
         "pillow",

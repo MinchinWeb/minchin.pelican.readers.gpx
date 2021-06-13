@@ -1,3 +1,6 @@
+**/__pycache__/
+*.egg-info
+
 .venv*/
 pelican/plugins/gpx_reader/_vendor/
 test-site/output/
