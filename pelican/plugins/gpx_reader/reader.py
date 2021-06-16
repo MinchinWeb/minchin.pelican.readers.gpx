@@ -21,7 +21,7 @@ class GPXReader(BaseReader):
     ]
 
     def read(self, source_filename):
-        logger.debug("%s file: %s" % (LOG_PREFIX, source_filename))
+        logger.debug("%s read file: %s" % (LOG_PREFIX, source_filename))
 
         # gpx_settings = MergedConfiguration(self.settings)
 
