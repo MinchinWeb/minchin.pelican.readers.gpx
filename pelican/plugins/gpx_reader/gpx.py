@@ -2,7 +2,10 @@ from datetime import datetime
 import logging
 
 from pytz import timezone
-from timezonefinder import TimezoneFinder
+try:
+    from timezonefinder import TimezoneFinder
+except ImportError:
+    TimezoneFinder = None
 
 from .constants import INDENT
 
@@ -55,7 +58,10 @@ def simplify_gpx(gpx, pelican_settings):
 
 
 def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
-    tz_finder = TimezoneFinder()
+    if TimezoneFinder:
+        tz_finder = TimezoneFinder()
+    else:
+        tz_finder = None
 
     latlong_bounds = gpx.get_bounds()
     elev_bounds = gpx.get_elevation_extremes()
@@ -81,16 +87,23 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
     logger.debug(f"{INDENT}travel length: {travel_length_km:,.1f} km")
 
     first_point = gpx.tracks[0].segments[0].points[0]
-    tz_start = timezone(
-        tz_finder.timezone_at(lng=first_point.longitude, lat=first_point.latitude)
-    )
-    start_time = time_bounds.start_time.astimezone(tz_start)
-
     last_point = gpx.tracks[-1].segments[-1].points[-1]
-    tz_end = timezone(
-        tz_finder.timezone_at(lng=last_point.longitude, lat=last_point.latitude)
-    )
-    end_time = time_bounds.end_time.astimezone(tz_end)
+
+    if tz_finder:
+        tz_start = timezone(
+            tz_finder.timezone_at(lng=first_point.longitude, lat=first_point.latitude)
+        )
+        start_time = time_bounds.start_time.astimezone(tz_start)
+
+        tz_end = timezone(
+            tz_finder.timezone_at(lng=last_point.longitude, lat=last_point.latitude)
+        )
+        end_time = time_bounds.end_time.astimezone(tz_end)
+    else:
+        # TODO: default to site timezone
+        start_time = time_bounds.start_time
+        end_time = time_bounds.end_time
+
 
     metadata = {
         "title": f"GPX track for {source_file.name}",
