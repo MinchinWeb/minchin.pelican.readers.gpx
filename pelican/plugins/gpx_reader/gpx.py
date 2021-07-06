@@ -36,7 +36,7 @@ def clean_gpx(gpx):  # clean from basic issues
             for index in cut_index:
                 segment.remove_point(index)
 
-    logger.debug(f"{INDENT}{len(cut_index):,} 'bad' points dropped.")
+    logger.debug(f"{INDENT}{len(cut_index):,} 'bad' point{'s' if len(cut_index) != 1 else ''} dropped.")
 
     return gpx
 
@@ -79,8 +79,9 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
             point_count += len(segment.points)
 
     logger.debug(
-        f"{INDENT}{track_count:,} track(s), {segment_count:,} segment(s), "
-        f"and {point_count:,} points."
+        f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
+        f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
+        f"and {point_count:,} point{'s' if point_count != 1 else ''}."
     )
 
     travel_length_km = gpx.length_2d() / 1000
