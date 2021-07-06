@@ -50,7 +50,7 @@ INSTALL_REQUIRES = [
 ]
 
 EXTRA_REQUIRES = {
-    "local-time": [
+    "localtime": [
         "timezonefinder[numba]",  # 45MB download
     ],
     "lxml": [

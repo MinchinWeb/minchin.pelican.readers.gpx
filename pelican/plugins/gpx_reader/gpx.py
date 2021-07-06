@@ -6,7 +6,10 @@ from pytz import timezone
 try:
     from timezonefinder import TimezoneFinder
 except ImportError:
-    TimezoneFinder = None
+    try:
+        from timezonefinderL import TimezoneFinder
+    except ImportError:
+        TimezoneFinder = None
 
 from .constants import INDENT
 
