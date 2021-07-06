@@ -45,17 +45,22 @@ PACKAGES = setuptools.find_packages(exclude=("vendor_src",))
 INSTALL_REQUIRES = [
         "pelican",
         "gpxpy",
-        "lxml",  # speed up gpxpy
-        # "timezonefinder[numba]",  ## TODO: make optional, 45MB
         # also vendorized heatmap -- https://github.com/sethoscope/heatmap
-        "osmviz",
+        "osmviz",  # required by heatmap
         "pillow",
 ]
 
 EXTRA_REQUIRES = {
+    "local-time": [
+        "timezonefinder[numba]",  #45MB download
+    ],
+    "lxml": [
+        "lxml",  # speed up gpxpy
+    ],
     "build": [
         "pip-tools",
         "minchin.releaser",
+        "invoke",
     ],
     "docs": [
         # 'sphinx >= 1.4',  # theme requires at least 1.4
@@ -81,8 +86,8 @@ CLASSIFIERS = [
     # 'Private :: Do Not Upload',
     # 'Development Status :: 1 - Planning',
     # 'Development Status :: 2 - Pre-Alpha',
-    # 'Development Status :: 3 - Alpha',
-    "Development Status :: 4 - Beta",
+    'Development Status :: 3 - Alpha',
+    # "Development Status :: 4 - Beta",
     # 'Development Status :: 5 - Production/Stable',
     # 'Development Status :: 6 - Mature',
     # 'Development Status :: 7 - Inactive',
