@@ -4,7 +4,6 @@ import re
 
 import setuptools
 
-
 here = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -43,16 +42,16 @@ LICENSE = find_meta(*META_PATH, meta_key="license")
 PACKAGES = setuptools.find_packages(exclude=("vendor_src",))
 
 INSTALL_REQUIRES = [
-        "pelican",
-        "gpxpy",
-        # also vendorized heatmap -- https://github.com/sethoscope/heatmap
-        "osmviz",  # required by heatmap
-        "pillow",
+    "pelican",
+    "gpxpy",
+    # also vendorized heatmap -- https://github.com/sethoscope/heatmap
+    "osmviz",  # required by heatmap
+    "pillow",
 ]
 
 EXTRA_REQUIRES = {
     "local-time": [
-        "timezonefinder[numba]",  #45MB download
+        "timezonefinder[numba]",  # 45MB download
     ],
     "lxml": [
         "lxml",  # speed up gpxpy
@@ -76,6 +75,10 @@ EXTRA_REQUIRES = {
         # 'pycodestyle',
         # 'check-manifest'
     ],
+    "dev": [
+        "black",
+        "isort",
+    ],
 }
 
 # full list of Classifiers at
@@ -86,7 +89,7 @@ CLASSIFIERS = [
     # 'Private :: Do Not Upload',
     # 'Development Status :: 1 - Planning',
     # 'Development Status :: 2 - Pre-Alpha',
-    'Development Status :: 3 - Alpha',
+    "Development Status :: 3 - Alpha",
     # "Development Status :: 4 - Beta",
     # 'Development Status :: 5 - Production/Stable',
     # 'Development Status :: 6 - Mature',

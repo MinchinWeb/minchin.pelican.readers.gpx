@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 
 from pytz import timezone
+
 try:
     from timezonefinder import TimezoneFinder
 except ImportError:
@@ -36,7 +37,9 @@ def clean_gpx(gpx):  # clean from basic issues
             for index in cut_index:
                 segment.remove_point(index)
 
-    logger.debug(f"{INDENT}{len(cut_index):,} 'bad' point{'s' if len(cut_index) != 1 else ''} dropped.")
+    logger.debug(
+        f"{INDENT}{len(cut_index):,} 'bad' point{'s' if len(cut_index) != 1 else ''} dropped."
+    )
 
     return gpx
 
@@ -104,7 +107,6 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
         # TODO: default to site timezone
         start_time = time_bounds.start_time
         end_time = time_bounds.end_time
-
 
     metadata = {
         "title": f"GPX track for {source_file.name}",

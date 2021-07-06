@@ -3,7 +3,6 @@ import logging
 from ._vendor.heatmap import heatmap
 from .constants import INDENT
 
-
 logger = logging.getLogger(__name__)
 
 

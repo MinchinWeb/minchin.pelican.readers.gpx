@@ -15,7 +15,9 @@ __license__ = "MIT License"
 
 INDENT = " " * 4
 LOG_PREFIX = "[GPX Reader]"
-GPX_PATHS = ["gpx", ]
+GPX_PATHS = [
+    "gpx",
+]
 GPX_EXCLUDES = list()
 GPX_AUTHOR = "GPX Reader"
 GPX_CATEGORY = "GPX"

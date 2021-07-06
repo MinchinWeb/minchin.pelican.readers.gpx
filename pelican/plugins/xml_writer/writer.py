@@ -3,6 +3,7 @@ from posixpath import join as posix_join
 from urllib.parse import urljoin
 
 from pelican.writers import Writer
+
 from .constants import LOG_PREFIX
 
 logger = logging.getLogger(__name__)
