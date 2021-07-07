@@ -1,3 +1,7 @@
+"""
+GPX functionality that isn't directly tied to a piece of the Pelican system.
+"""
+
 from datetime import datetime
 import logging
 
@@ -73,8 +77,6 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
     elev_bounds = gpx.get_elevation_extremes()
     time_bounds = gpx.get_time_bounds()
 
-    logger.debug(f"{INDENT}start date is {time_bounds.start_time}")
-
     track_count = len(gpx.tracks)
     segment_count = 0
     point_count = 0
@@ -84,14 +86,7 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
         for segment in track.segments:
             point_count += len(segment.points)
 
-    logger.debug(
-        f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
-        f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
-        f"and {point_count:,} point{'s' if point_count != 1 else ''}."
-    )
-
     travel_length_km = gpx.length_2d() / 1000
-    logger.debug(f"{INDENT}travel length: {travel_length_km:,.1f} km")
 
     first_point = gpx.tracks[0].segments[0].points[0]
     last_point = gpx.tracks[-1].segments[-1].points[-1]
@@ -100,16 +95,27 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
         tz_start = timezone(
             tz_finder.timezone_at(lng=first_point.longitude, lat=first_point.latitude)
         )
-        start_time = time_bounds.start_time.astimezone(tz_start)
-
         tz_end = timezone(
             tz_finder.timezone_at(lng=last_point.longitude, lat=last_point.latitude)
         )
+    elif "TIMEZONE" in pelican_settings.keys():
+        tz_start = tz_end = timezone(pelican_settings["TIMEZONE"])
+
+    if tz_start and tz_end:
+        start_time = time_bounds.start_time.astimezone(tz_start)
         end_time = time_bounds.end_time.astimezone(tz_end)
     else:
-        # TODO: default to site timezone
+        # likely UTC
         start_time = time_bounds.start_time
         end_time = time_bounds.end_time
+
+    logger.debug(f"{INDENT}start date is {start_time}")
+    logger.debug(
+        f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
+        f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
+        f"and {point_count:,} point{'s' if point_count != 1 else ''}."
+    )
+    logger.debug(f"{INDENT}travel length: {travel_length_km:,.1f} km")
 
     metadata = {
         "title": f"GPX track for {source_file.name}",
@@ -122,8 +128,8 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
         "author": pelican_settings["GPX_AUTHOR"],
         "slug": f"{source_file.name}".replace(".", "-"),
         "status": pelican_settings["GPX_STATUS"],
-        "gpx_start_time": time_bounds.start_time,
-        "gpx_end_time": time_bounds.end_time,
+        "gpx_start_time": start_time,
+        "gpx_end_time": end_time,
         "gpx_min_elevation": elev_bounds.minimum,
         "gpx_max_elevation": elev_bounds.maximum,
         "gpx_min_latitude": latlong_bounds.min_latitude,
