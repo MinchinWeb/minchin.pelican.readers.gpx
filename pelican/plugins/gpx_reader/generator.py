@@ -10,6 +10,7 @@ from .constants import LOG_PREFIX
 from .contents import GPX as GPXContent
 
 logger = logging.getLogger(__name__)
+gpx_count = 0
 
 
 class GPXArticleGenerator(ArticlesGenerator):
@@ -44,7 +45,7 @@ class GPXGenerator(CachingGenerator):
     def generate_context(self):
         """
         Called by Pelican to fill context.
-        
+
         Context is the metadata about all the pages/articles/etc that is
         offered up to the templating engine.
         """
@@ -96,6 +97,9 @@ class GPXGenerator(CachingGenerator):
         self._update_context(("gpxes", "dates"))
         self.save_cache()
         self.readers.save_cache()
+
+        global gpx_count
+        gpx_count = len(self.gpxes)
         signals.gpx_generator_finalized.send(self)
 
     def generate_output(self, writer):
@@ -113,3 +117,12 @@ class GPXGenerator(CachingGenerator):
                 gpx=gpx_article,
             )
         signals.gpx_writer_finalized.send(self, writer=writer)
+
+
+def pelican_finalized(pelican_obj):
+    """
+    Called when Pelican is (nearly) done to display the number of files processed.
+    """
+    global gpx_count
+    plural = "" if gpx_count == 1 else "s"
+    print("%s Processed %s GPX file%s." % (LOG_PREFIX, gpx_count, plural))
