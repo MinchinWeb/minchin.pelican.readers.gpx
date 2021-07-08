@@ -51,7 +51,7 @@ INSTALL_REQUIRES = [
 
 EXTRA_REQUIRES = {
     "localtime": [
-        "timezonefinder[numba]",  # 45MB download
+        "timezonefinder[numba]",  # ~73 MB download
     ],
     "lxml": [
         "lxml",  # speed up gpxpy

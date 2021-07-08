@@ -119,7 +119,7 @@ class GPXGenerator(CachingGenerator):
         signals.gpx_writer_finalized.send(self, writer=writer)
 
 
-def pelican_finalized(pelican_obj):
+def display_stats(pelican_obj):
     """
     Called when Pelican is (nearly) done to display the number of files processed.
     """
