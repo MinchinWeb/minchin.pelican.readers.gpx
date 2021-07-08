@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "module": "pelican",
-            "cwd": "${workspaceFolder}\test-site",
+            "cwd": "${workspaceFolder}/test-site",
             "args": ["--debug"]
         }
     ]

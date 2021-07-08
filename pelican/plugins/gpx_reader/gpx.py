@@ -67,7 +67,7 @@ def simplify_gpx(gpx, pelican_settings):
     return gpx
 
 
-def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
+def generate_metadata(gpx, source_file, pelican_settings):
     if TimezoneFinder:
         tz_finder = TimezoneFinder()
     else:
@@ -109,13 +109,13 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
         start_time = time_bounds.start_time
         end_time = time_bounds.end_time
 
-    logger.debug(f"{INDENT}start date is {start_time}")
+    logger.debug(f"{INDENT}Start date is {start_time}")
     logger.debug(
         f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
         f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
         f"and {point_count:,} point{'s' if point_count != 1 else ''}."
     )
-    logger.debug(f"{INDENT}travel length: {travel_length_km:,.1f} km")
+    logger.debug(f"{INDENT}Travel length: {travel_length_km:,.1f} km")
 
     metadata = {
         "title": f"GPX track for {source_file.name}",
@@ -140,7 +140,7 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
         "gpx_segments": segment_count,
         "gpx_points": point_count,
         "gpx_length_km": travel_length_km,
-        "gpx_cleaned_file": f'{pelican_settings["GPX_OUTPUT_FOLDER"]}/{gpx_file_out.name}',
+        "gpx_cleaned_file": f'{pelican_settings["GPX_OUTPUT_FOLDER"]}/{source_file.stem}-cleaned.gpx',
         # "gpx_image_b64": heatmap_image_b64,
     }
 
@@ -150,4 +150,4 @@ def generate_metadata(gpx, source_file, pelican_settings, gpx_file_out):
             image_key
         ] = f'{pelican_settings["GPX_OUTPUT_FOLDER"]}/{k}/{source_file.stem}.png'
 
-    return metadata, start_time, end_time
+    return metadata

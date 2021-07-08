@@ -42,6 +42,12 @@ class GPXGenerator(CachingGenerator):
         signals.gpx_generator_init.send(self)
 
     def generate_context(self):
+        """
+        Called by Pelican to fill context.
+        
+        Context is the metadata about all the pages/articles/etc that is
+        offered up to the templating engine.
+        """
         all_gpxes = []
 
         for fn in self.get_files(
@@ -92,5 +98,18 @@ class GPXGenerator(CachingGenerator):
         self.readers.save_cache()
         signals.gpx_generator_finalized.send(self)
 
-    # def generate_output(self):
-    #     pass
+    def generate_output(self, writer):
+        """
+        Called by Pelican to push the resulting files to disk.
+        """
+        for gpx_article in self.gpxes:
+            signals.gpx_generator_write_gpx.send(self, content=gpx_article.content)
+            logging.debug("%s Generate output for %s" % (LOG_PREFIX, gpx_article))
+            writer.write_xml(
+                name=gpx_article.gpx_cleaned_file,
+                template=None,
+                context=self.context,
+                xml=gpx_article.content,
+                gpx=gpx_article,
+            )
+        signals.gpx_writer_finalized.send(self, writer=writer)
