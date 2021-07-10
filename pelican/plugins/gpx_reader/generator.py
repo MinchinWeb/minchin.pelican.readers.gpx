@@ -110,7 +110,7 @@ class GPXGenerator(CachingGenerator):
             signals.gpx_generator_write_gpx.send(self, content=gpx_article.content)
             logging.debug("%s Generate output for %s" % (LOG_PREFIX, gpx_article))
             writer.write_xml(
-                name=gpx_article.gpx_cleaned_file,
+                name=gpx_article.save_as,
                 template=None,
                 context=self.context,
                 xml=gpx_article.content,

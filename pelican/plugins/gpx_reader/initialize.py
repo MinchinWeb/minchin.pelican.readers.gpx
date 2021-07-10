@@ -10,13 +10,14 @@ from .constants import (
     GPX_EXTENT,
     GPX_GRADIENT,
     GPX_HEATMAPS,
+    GPX_IMAGE_SAVE_AS,
     GPX_HSVA_MAX,
     GPX_HSVA_MIN,
     GPX_KERNEL,
-    GPX_OUTPUT_FOLDER,
     GPX_PATHS,
     GPX_PROJECTION,
     GPX_RADIUS,
+    GPX_SAVE_AS,
     GPX_SCALE,
     GPX_SIMPLIFY_DISTANCE,
     GPX_STATUS,
@@ -35,9 +36,10 @@ def check_settings(pelican):
         "GPX_AUTHOR",
         "GPX_CATEGORY",
         "GPX_EXCLUDES",
+        "GPX_IMAGE_SAVE_AS",
         "GPX_STATUS",
-        "GPX_OUTPUT_FOLDER",
         "GPX_PATHS",
+        "GPX_SAVE_AS",
         "GPX_SIMPLIFY_DISTANCE",
         "GPX_HEATMAPS",
     ]:
@@ -50,9 +52,6 @@ def check_settings(pelican):
             pelican.settings["ARTICLE_EXCLUDES"].append(item)
         if item not in pelican.settings["PAGE_EXCLUDES"]:
             pelican.settings["PAGE_EXCLUDES"].append(item)
-
-    if "GPX_SAVE_AS" not in pelican.settings:
-        pelican.settings["GPX_SAVE_AS"] = pelican.settings["ARTICLE_SAVE_AS"]
 
     # if "compiled" in self.heatmaps.keys():
     #     logger.warn(

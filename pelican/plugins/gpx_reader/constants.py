@@ -17,14 +17,25 @@ INDENT = " " * 4
 LOG_PREFIX = "[GPX Reader]"
 GPX_PATHS = [
     "gpx",
-]
+]  # source paths
 GPX_EXCLUDES = list()
 GPX_AUTHOR = "GPX Reader"
 GPX_CATEGORY = "GPX"
 GPX_STATUS = "published"
-GPX_OUTPUT_FOLDER = "gpx"
 GPX_SIMPLIFY_DISTANCE = 5  # in meters
 GPX_HEATMAPS = {"default": dict()}
+GPX_SAVE_AS = "gpx/{slug}.gpx"
+# YEAR_GPX_SAVE_AS = "gpx/combined/{date:%Y}.gpx"
+# QUARTER_GPX_SAVE_AS = "gpx/combined/{date:%Y}-Q{quarter}.gpx"  # https://github.com/BetaS/datetime-quarter
+# MONTH_GPX_SAVE_AS = "gpx/combined/{date:%Y}-{date:%m}.gpx"
+# WEEK_GPX_SAVE_AS = "gpx/combined/{date:%G}-W{date:%V}.gpx"
+# DAY_GPX_SAVE_AS = "gpx/combined/{date:%Y}-{date:%m}-{date:%d}.gpx"
+GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/{slug}.png"
+# YEAR_GPX_IMAGE_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}.png"
+# QUARTER_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}-Q{quarter}.png"
+# MONTH_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}-{date:%m}.png"
+# WEEK_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%G}-W{date:%V}.png"
+# DAY_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}-{date:%m}-{date:%d}.png"
 
 # per heatmap
 GPX_SCALE = 250  # meters per pixel (approx.)

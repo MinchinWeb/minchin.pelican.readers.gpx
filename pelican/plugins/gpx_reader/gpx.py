@@ -126,7 +126,7 @@ def generate_metadata(gpx, source_file, pelican_settings):
         #     "tag_b",
         # ],
         "author": pelican_settings["GPX_AUTHOR"],
-        "slug": f"{source_file.name}".replace(".", "-"),
+        "slug": f"{source_file.stem}".replace(".", "-"),
         "status": pelican_settings["GPX_STATUS"],
         "gpx_start_time": start_time,
         "gpx_end_time": end_time,
@@ -140,14 +140,15 @@ def generate_metadata(gpx, source_file, pelican_settings):
         "gpx_segments": segment_count,
         "gpx_points": point_count,
         "gpx_length_km": travel_length_km,
-        "gpx_cleaned_file": f'{pelican_settings["GPX_OUTPUT_FOLDER"]}/{source_file.stem}-cleaned.gpx',
-        # "gpx_image_b64": heatmap_image_b64,
     }
+
+    metadata["save_as"] = pelican_settings["GPX_SAVE_AS"].format(**metadata)
 
     for k in pelican_settings["GPX_HEATMAPS"].keys():
         image_key = f"gpx_{k}_image"
         metadata[
             image_key
-        ] = f'{pelican_settings["GPX_OUTPUT_FOLDER"]}/{k}/{source_file.stem}.png'
+        ] = pelican_settings["GPX_IMAGE_SAVE_AS"].format(heatmap=k, **metadata)
 
+    metadata["date"] = str(metadata["date"])
     return metadata
