@@ -1,0 +1,5 @@
+recursive-exclude vendor_src *.*
+recursive-exclude test-site *.*
+recursive-exclude test-site-personal *.*
+recursive-exclude pelican/plugins/gpx_reader/_vendor/heatmap *_example.py
+recursive-exclude pelican/plugins/gpx_reader/_vendor/heatmap/test *.*
