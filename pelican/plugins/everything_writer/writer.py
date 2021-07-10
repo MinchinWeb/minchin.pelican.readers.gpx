@@ -17,7 +17,7 @@ class EverythingWriter(Writer):
     """Pelican writer, extended to output XML files."""
 
     def __init__(self, output_path, settings=None):
-        logger.debug("%s initialized" % LOG_PREFIX)
+        logger.debug("%s initialized", LOG_PREFIX)
         try:
             super().__init__(output_path, settings=settings)
         except KeyError:
@@ -73,7 +73,7 @@ class EverythingWriter(Writer):
         with self._open_w(output_file, "utf-8", override=override_output) as f:
             f.write(xml)
 
-        logger.info("%s Writing XML %s" % (LOG_PREFIX, output_file))
+        logger.info("%s Writing XML %s", LOG_PREFIX, output_file)
         # Send a signal to say we're writing a file with some specific
         # local context.
         signals.xml_content_written.send(

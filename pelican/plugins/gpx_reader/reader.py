@@ -26,7 +26,7 @@ class GPXReader(BaseReader):
     extensions = None
 
     def read(self, source_path):
-        logger.debug("%s read file: %s" % (LOG_PREFIX, source_path))
+        logger.debug("%s read file: %s", LOG_PREFIX, source_path)
 
         source_file = Path(source_path).resolve()
         with pelican_open(source_file) as fn:

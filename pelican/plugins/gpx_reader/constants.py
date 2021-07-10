@@ -59,11 +59,11 @@ def test_enabled(log=True):
     if heatmap:
         if log:
             logger.info(
-                "%s enabled, version %s, heatmap version %s"
-                % (LOG_PREFIX, __version__, heatmap.__version__)
+                "%s enabled, version %s, heatmap version %s",
+                LOG_PREFIX, __version__, heatmap.__version__
             )
         return True
     else:
         if log:
-            logger.warn("%s disabled, version %s" % (LOG_PREFIX, __version__))
+            logger.warn("%s disabled, version %s", LOG_PREFIX, __version__)
         return False

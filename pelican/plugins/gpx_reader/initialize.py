@@ -31,7 +31,7 @@ def check_settings(pelican):
     """
     Insert defaults in Pelican settings, as needed.
     """
-    logger.debug("%s massaging settings, setting defaults." % LOG_PREFIX)
+    logger.debug("%s massaging settings, setting defaults.", LOG_PREFIX)
     for key in [
         "GPX_AUTHOR",
         "GPX_CATEGORY",

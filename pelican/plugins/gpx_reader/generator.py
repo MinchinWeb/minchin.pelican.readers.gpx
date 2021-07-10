@@ -16,7 +16,7 @@ gpx_count = 0
 class GPXArticleGenerator(ArticlesGenerator):
     def generate_pages(self, writer):
         """Generate the pages on the disk"""
-        logger.debug("%s Article Generator: generate pages" % LOG_PREFIX)
+        logger.debug("%s Article Generator: generate pages", LOG_PREFIX)
 
         write = partial(writer.write_file, relative_urls=self.settings["RELATIVE_URLS"])
 
@@ -108,7 +108,7 @@ class GPXGenerator(CachingGenerator):
         """
         for gpx_article in self.gpxes:
             signals.gpx_generator_write_gpx.send(self, content=gpx_article.content)
-            logging.debug("%s Generate output for %s" % (LOG_PREFIX, gpx_article))
+            logging.debug("%s Generate output for %s", LOG_PREFIX, gpx_article)
             writer.write_xml(
                 name=gpx_article.save_as,
                 template=None,
