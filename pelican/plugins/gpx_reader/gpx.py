@@ -5,7 +5,10 @@ GPX functionality that isn't directly tied to a piece of the Pelican system.
 from datetime import datetime
 import logging
 
+import gpxpy
 from pytz import timezone
+
+from .constants import LOG_PREFIX
 
 try:
     from timezonefinder import TimezoneFinder
@@ -65,6 +68,51 @@ def simplify_gpx(gpx, pelican_settings):
                 logger.debug(f"{INDENT}{i2},{i3} - Simplified, {cut:,} points removed.")
 
     return gpx
+
+
+def combine_gpx(gpxes, log_name=None):
+    """
+    Combine a series of gpx files.
+
+    Args:
+    ----
+        gpxes: assumed to be an interable of the XML of a GPX file
+        log_name: name to display in the debug log
+
+    """
+    combined_gpx = None
+    for raw_gpx in gpxes:
+        gpx_data = gpxpy.parse(raw_gpx)
+        if combined_gpx is None:
+            combined_gpx = gpx_data
+        else:
+            for track in gpx_data.tracks:
+                combined_gpx.tracks.append(track)
+
+    if log_name:
+        track_count = len(combined_gpx.tracks)
+        segment_count = 0
+        point_count = 0
+
+        for track in combined_gpx.tracks:
+            segment_count += len(track.segments)
+            for segment in track.segments:
+                point_count += len(segment.points)
+
+        travel_length_km = combined_gpx.length_2d() / 1000
+
+        logger.debug(
+            "%s combined GPX for %s",
+            LOG_PREFIX,
+            log_name,
+        )
+        logger.debug(
+            f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
+            f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
+            f"and {point_count:,} point{'s' if point_count != 1 else ''}."
+        )
+        logger.debug(f"{INDENT}Travel length: {travel_length_km:,.1f} km")
+    return combined_gpx
 
 
 def generate_metadata(gpx, source_file, pelican_settings):
@@ -146,9 +194,9 @@ def generate_metadata(gpx, source_file, pelican_settings):
 
     for k in pelican_settings["GPX_HEATMAPS"].keys():
         image_key = f"gpx_{k}_image"
-        metadata[
-            image_key
-        ] = pelican_settings["GPX_IMAGE_SAVE_AS"].format(heatmap=k, **metadata)
+        metadata[image_key] = pelican_settings["GPX_IMAGE_SAVE_AS"].format(
+            heatmap=k, **metadata
+        )
 
     metadata["date"] = str(metadata["date"])
     return metadata

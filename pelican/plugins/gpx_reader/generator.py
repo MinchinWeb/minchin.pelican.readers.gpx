@@ -1,4 +1,6 @@
+import calendar
 from functools import partial
+from itertools import groupby
 import logging
 from operator import attrgetter
 
@@ -8,9 +10,16 @@ from pelican.utils import order_content
 from . import signals
 from .constants import LOG_PREFIX
 from .contents import GPX as GPXContent
+from .gpx import combine_gpx
 
 logger = logging.getLogger(__name__)
 gpx_count = 0
+
+period_date_key = {
+    "year": attrgetter("date.year"),
+    "month": attrgetter("date.year", "date.month"),
+    "day": attrgetter("date.year", "date.month", "date.day"),
+}
 
 
 class GPXArticleGenerator(ArticlesGenerator):
@@ -102,20 +111,87 @@ class GPXGenerator(CachingGenerator):
         gpx_count = len(self.gpxes)
         signals.gpx_generator_finalized.send(self)
 
-    def generate_output(self, writer):
-        """
-        Called by Pelican to push the resulting files to disk.
-        """
+    def generate_gpxes(self, writer):
         for gpx_article in self.gpxes:
             signals.gpx_generator_write_gpx.send(self, content=gpx_article.content)
             logging.debug("%s Generate output for %s", LOG_PREFIX, gpx_article)
             writer.write_xml(
                 name=gpx_article.save_as,
                 template=None,
-                context=self.context,
+                context=self.context.copy(),
                 xml=gpx_article.content,
                 gpx=gpx_article,
             )
+
+    def generate_one_period(self, dates, period_key, save_as_setting, writer):
+        """
+        Generate combined GPX for a single grouping.
+
+        Combined GPXes are taken from dates (which is already sorted by date),
+        grouped by "period", and written to "save_as".
+        """
+        # add a signal somewhere here?
+
+        for _period, group in groupby(dates, key=period_key):
+            archive = list(group)
+            gpxes = [g for g in self.gpxes if g in archive]
+            date = archive[0].date
+            save_as = save_as_setting.format(date=date)
+            context = self.context.copy()
+
+            if period_key == period_date_key["year"]:
+                context["period"] = (_period,)
+                context["period_num"] = (_period,)
+            else:
+                month_name = calendar.month_name[_period[1]]
+                if period_key == period_date_key["month"]:
+                    context["period"] = (_period[0], month_name)
+                else:
+                    context["period"] = (_period[0], month_name, _period[2])
+                context["period_num"] = tuple(_period)
+
+            combined_gpx = combine_gpx(
+                [x.content for x in gpxes],
+                " ".join([str(x) for x in context["period"]]),
+            )
+
+            if combined_gpx:
+                # print("**", save_as)
+                writer.write_xml(
+                    name=save_as,
+                    template=None,
+                    context=context,
+                    xml=combined_gpx.to_xml(),
+                )
+
+    def generate_period_gpxes(self, writer):
+        """
+        Generate combined GPX files.
+
+        Generate per-year, (per-quarter), per-month, (per-week) and per-day
+        combined GPX files.
+        """
+        period_save_as = {
+            "year": self.settings["YEAR_GPX_SAVE_AS"],
+            # "quarter": self.settings["QUARTER_GPX_SAVE_AS"],
+            "month": self.settings["MONTH_GPX_SAVE_AS"],
+            # "week": self.settings["WEEK_GPX_SAVE_AS"],
+            "day": self.settings["DAY_GPX_SAVE_AS"],
+        }
+
+        for period in period_save_as.keys():
+            save_as = period_save_as[period]
+            if save_as:
+                key = period_date_key[period]
+                self.generate_one_period(self.dates, key, save_as, writer)
+
+    def generate_output(self, writer):
+        """
+        Called by Pelican to push the resulting files to disk.
+        """
+        self.generate_gpxes(writer=writer)
+        self.generate_period_gpxes(writer=writer)
+
         signals.gpx_writer_finalized.send(self, writer=writer)
 
 

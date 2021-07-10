@@ -1,6 +1,7 @@
 import logging
 
 from .constants import (
+    DAY_GPX_SAVE_AS,
     GPX_AUTHOR,
     GPX_BACKGROUND,
     GPX_BACKGROUND_IMAGE,
@@ -10,9 +11,9 @@ from .constants import (
     GPX_EXTENT,
     GPX_GRADIENT,
     GPX_HEATMAPS,
-    GPX_IMAGE_SAVE_AS,
     GPX_HSVA_MAX,
     GPX_HSVA_MIN,
+    GPX_IMAGE_SAVE_AS,
     GPX_KERNEL,
     GPX_PATHS,
     GPX_PROJECTION,
@@ -22,6 +23,8 @@ from .constants import (
     GPX_SIMPLIFY_DISTANCE,
     GPX_STATUS,
     LOG_PREFIX,
+    MONTH_GPX_SAVE_AS,
+    YEAR_GPX_SAVE_AS,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,15 +36,19 @@ def check_settings(pelican):
     """
     logger.debug("%s massaging settings, setting defaults.", LOG_PREFIX)
     for key in [
+        "DAY_GPX_SAVE_AS",
         "GPX_AUTHOR",
         "GPX_CATEGORY",
         "GPX_EXCLUDES",
+        "GPX_HEATMAPS",
         "GPX_IMAGE_SAVE_AS",
-        "GPX_STATUS",
         "GPX_PATHS",
         "GPX_SAVE_AS",
         "GPX_SIMPLIFY_DISTANCE",
-        "GPX_HEATMAPS",
+        "GPX_STATUS",
+        "MONTH_GPX_SAVE_AS",
+        "YEAR_GPX_SAVE_AS",
+
     ]:
         if key not in pelican.settings.keys():
             pelican.settings[key] = eval(key)
