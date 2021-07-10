@@ -10,7 +10,7 @@ def add_reader(readers):
     readers.reader_classes["gpx"] = GPXReader
 
 
-def add_generator(pelican):
+def add_generator(pelican_instance):
     return GPXGenerator
 
 

@@ -4,7 +4,8 @@ from .constants import __version__
 from .writer import EverythingWriter
 
 
-def add_writer(pelican):
+def add_writer(pelican_instance):
+    # use pelican_instance to setup stuff if needed
     return EverythingWriter
 
 

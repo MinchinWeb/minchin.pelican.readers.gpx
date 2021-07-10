@@ -28,13 +28,14 @@ class GPXReader(BaseReader):
     def read(self, source_path):
         logger.debug("%s read file: %s" % (LOG_PREFIX, source_path))
 
-
         source_file = Path(source_path).resolve()
         with pelican_open(source_file) as fn:
             gpx = gpxpy.parse(fn)
 
         clean_gpx(gpx)
         simplify_gpx(gpx, self.settings)
+
+        content = gpx.to_xml()
 
         metadata = generate_metadata(
             gpx=gpx,
@@ -46,6 +47,5 @@ class GPXReader(BaseReader):
         for key, value in metadata.items():
             key = key.lower()
             parsed_metadata[key] = self.process_metadata(key, value)
-
 
         return content, parsed_metadata
