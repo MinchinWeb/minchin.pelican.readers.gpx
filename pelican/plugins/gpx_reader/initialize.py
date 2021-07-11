@@ -1,6 +1,7 @@
 import logging
 
 from .constants import (
+    ALL_GPX_SAVE_AS,
     DAY_GPX_SAVE_AS,
     GPX_AUTHOR,
     GPX_BACKGROUND,
@@ -36,6 +37,7 @@ def check_settings(pelican):
     """
     logger.debug("%s massaging settings, setting defaults.", LOG_PREFIX)
     for key in [
+        "ALL_GPX_SAVE_AS",
         "DAY_GPX_SAVE_AS",
         "GPX_AUTHOR",
         "GPX_CATEGORY",

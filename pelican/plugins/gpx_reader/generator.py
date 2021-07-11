@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 gpx_count = 0
 
 period_date_key = {
+    "all": None,
     "year": attrgetter("date.year"),
     "month": attrgetter("date.year", "date.month"),
     "day": attrgetter("date.year", "date.month", "date.day"),
@@ -128,41 +129,60 @@ class GPXGenerator(CachingGenerator):
         Generate combined GPX for a single grouping.
 
         Combined GPXes are taken from dates (which is already sorted by date),
-        grouped by "period", and written to "save_as".
+        grouped by "period_key", and written to "save_as".
         """
         # add a signal somewhere here?
 
-        for _period, group in groupby(dates, key=period_key):
-            archive = list(group)
-            gpxes = [g for g in self.gpxes if g in archive]
-            date = archive[0].date
-            save_as = save_as_setting.format(date=date)
+        if period_key == period_date_key["all"] and dates:
+            save_as = save_as_setting.format(date=dates[0].date)
+            combined_gpx = combine_gpx([x.content for x in dates], "all")
             context = self.context.copy()
-
-            if period_key == period_date_key["year"]:
-                context["period"] = (_period,)
-                context["period_num"] = (_period,)
-            else:
-                month_name = calendar.month_name[_period[1]]
-                if period_key == period_date_key["month"]:
-                    context["period"] = (_period[0], month_name)
-                else:
-                    context["period"] = (_period[0], month_name, _period[2])
-                context["period_num"] = tuple(_period)
-
-            combined_gpx = combine_gpx(
-                [x.content for x in gpxes],
-                " ".join([str(x) for x in context["period"]]),
-            )
+            context["period"] = "all"
+            context["period_num"] = (0,)
 
             if combined_gpx:
-                # print("**", save_as)
                 writer.write_xml(
                     name=save_as,
                     template=None,
                     context=context,
                     xml=combined_gpx.to_xml(),
                 )
+        else:
+            for _period, group in groupby(dates, key=period_key):
+                archive = list(group)
+                gpxes = [g for g in self.gpxes if g in archive]
+                date = archive[0].date
+                save_as = save_as_setting.format(date=date)
+                context = self.context.copy()
+
+                gpx_log_name = None
+                if period_key == period_date_key["all"]:
+                    context["period"] = "all"
+                    context["period_num"] = (0,)
+                    gpx_log_name = "all"
+                elif period_key == period_date_key["year"]:
+                    context["period"] = (_period,)
+                    context["period_num"] = (_period,)
+                else:
+                    month_name = calendar.month_name[_period[1]]
+                    if period_key == period_date_key["month"]:
+                        context["period"] = (_period[0], month_name)
+                    else:
+                        context["period"] = (_period[0], month_name, _period[2])
+                    context["period_num"] = tuple(_period)
+
+                if gpx_log_name is None:
+                    gpx_log_name = " ".join([str(x) for x in context["period"]])
+
+                combined_gpx = combine_gpx([x.content for x in gpxes], gpx_log_name)
+
+                if combined_gpx:
+                    writer.write_xml(
+                        name=save_as,
+                        template=None,
+                        context=context,
+                        xml=combined_gpx.to_xml(),
+                    )
 
     def generate_period_gpxes(self, writer):
         """
@@ -172,6 +192,7 @@ class GPXGenerator(CachingGenerator):
         combined GPX files.
         """
         period_save_as = {
+            "all": self.settings["ALL_GPX_SAVE_AS"],
             "year": self.settings["YEAR_GPX_SAVE_AS"],
             # "quarter": self.settings["QUARTER_GPX_SAVE_AS"],
             "month": self.settings["MONTH_GPX_SAVE_AS"],
