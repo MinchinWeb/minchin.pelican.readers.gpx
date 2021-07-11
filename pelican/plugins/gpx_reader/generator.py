@@ -124,6 +124,50 @@ class GPXGenerator(CachingGenerator):
                 gpx=gpx_article,
             )
 
+    def geneate_one_period_inner(
+        self,
+        gpxes,
+        save_as_setting,
+        date,
+        gpx_log_name,
+        context,
+        context_period,
+        context_period_number,
+        writer,
+    ):
+        """
+        Common generation for all types of grouped periods.
+
+        Args:
+        ----
+            gpxes (pelican.contents.Content): the gpxes (think articles) that
+                need to be combined
+            save_as_setting (str): the setting that is used to determine where
+                to save the combined file
+            date (datetime.datetime): applied to `save_as_setting` to get final
+                filename
+            gpx_log_name (str): used in logging to refer to this run
+            context: context that would normally be passed to the Jinja
+                templates
+            context_period (tuple): added to context at "period"
+            context_period_number (tuple): added to context at "period_num"
+            writer (pelican.writers.Writer): class that does the actual write
+                to disk
+        """
+        save_as = save_as_setting.format(date=date)
+        combined_gpx = combine_gpx([x.content for x in gpxes], gpx_log_name)
+        local_context = context.copy()
+        local_context["period"] = context_period
+        local_context["period_num"] = context_period_number
+
+        if combined_gpx:
+            writer.write_xml(
+                name=save_as,
+                template=None,
+                context=local_context,
+                xml=combined_gpx.to_xml(),
+            )
+
     def generate_one_period(self, dates, period_key, save_as_setting, writer):
         """
         Generate combined GPX for a single grouping.
@@ -134,55 +178,45 @@ class GPXGenerator(CachingGenerator):
         # add a signal somewhere here?
 
         if period_key == period_date_key["all"] and dates:
-            save_as = save_as_setting.format(date=dates[0].date)
-            combined_gpx = combine_gpx([x.content for x in dates], "all")
-            context = self.context.copy()
-            context["period"] = "all"
-            context["period_num"] = (0,)
+            self.geneate_one_period_inner(
+                gpxes=dates,
+                save_as_setting=save_as_setting,
+                date=dates[0].date,
+                gpx_log_name="all",
+                context=self.context,
+                context_period=("all",),
+                context_period_number=(0,),
+                writer=writer,
+            )
 
-            if combined_gpx:
-                writer.write_xml(
-                    name=save_as,
-                    template=None,
-                    context=context,
-                    xml=combined_gpx.to_xml(),
-                )
         else:
             for _period, group in groupby(dates, key=period_key):
                 archive = list(group)
                 gpxes = [g for g in self.gpxes if g in archive]
-                date = archive[0].date
-                save_as = save_as_setting.format(date=date)
-                context = self.context.copy()
 
-                gpx_log_name = None
-                if period_key == period_date_key["all"]:
-                    context["period"] = "all"
-                    context["period_num"] = (0,)
-                    gpx_log_name = "all"
-                elif period_key == period_date_key["year"]:
-                    context["period"] = (_period,)
-                    context["period_num"] = (_period,)
+                if period_key == period_date_key["year"]:
+                    context_period = (_period,)
+                    context_period_number = (_period,)
                 else:
                     month_name = calendar.month_name[_period[1]]
                     if period_key == period_date_key["month"]:
-                        context["period"] = (_period[0], month_name)
+                        context_period = (_period[0], month_name)
                     else:
-                        context["period"] = (_period[0], month_name, _period[2])
-                    context["period_num"] = tuple(_period)
+                        context_period = (_period[0], month_name, _period[2])
+                    context_period_number = tuple(_period)
 
-                if gpx_log_name is None:
-                    gpx_log_name = " ".join([str(x) for x in context["period"]])
+                gpx_log_name = " ".join([str(x) for x in context_period])
 
-                combined_gpx = combine_gpx([x.content for x in gpxes], gpx_log_name)
-
-                if combined_gpx:
-                    writer.write_xml(
-                        name=save_as,
-                        template=None,
-                        context=context,
-                        xml=combined_gpx.to_xml(),
-                    )
+                self.geneate_one_period_inner(
+                    gpxes=gpxes,
+                    save_as_setting=save_as_setting,
+                    date=archive[0].date,
+                    gpx_log_name=gpx_log_name,
+                    context=self.context,
+                    context_period=context_period,
+                    context_period_number=context_period_number,
+                    writer=writer,
+                )
 
     def generate_period_gpxes(self, writer):
         """
