@@ -1,4 +1,5 @@
 import calendar
+from datetime import datetime
 from functools import partial
 from itertools import groupby
 import logging
@@ -19,6 +20,10 @@ period_date_key = {
     "all": None,
     "year": attrgetter("date.year"),
     "month": attrgetter("date.year", "date.month"),
+    "week": lambda gpx_content: (
+        gpx_content.date.isocalendar().year,
+        gpx_content.date.isocalendar().week,
+    ),
     "day": attrgetter("date.year", "date.month", "date.day"),
 }
 
@@ -154,7 +159,9 @@ class GPXGenerator(CachingGenerator):
             writer (pelican.writers.Writer): class that does the actual write
                 to disk
         """
-        save_as = save_as_setting.format(date=date)
+        save_as = save_as_setting.format(
+            date=datetime(date.year, date.month, date.day)
+        )  # fixed in https://github.com/getpelican/pelican/pull/2902
         combined_gpx = combine_gpx([x.content for x in gpxes], gpx_log_name)
         local_context = context.copy()
         local_context["period"] = context_period
@@ -197,6 +204,9 @@ class GPXGenerator(CachingGenerator):
                 if period_key == period_date_key["year"]:
                     context_period = (_period,)
                     context_period_number = (_period,)
+                elif period_key == period_date_key["week"]:
+                    context_period = (_period[0], "week", _period[1])
+                    context_period_number = (_period[0], 0, _period[1])
                 else:
                     month_name = calendar.month_name[_period[1]]
                     if period_key == period_date_key["month"]:
@@ -230,7 +240,7 @@ class GPXGenerator(CachingGenerator):
             "year": self.settings["YEAR_GPX_SAVE_AS"],
             # "quarter": self.settings["QUARTER_GPX_SAVE_AS"],
             "month": self.settings["MONTH_GPX_SAVE_AS"],
-            # "week": self.settings["WEEK_GPX_SAVE_AS"],
+            "week": self.settings["WEEK_GPX_SAVE_AS"],
             "day": self.settings["DAY_GPX_SAVE_AS"],
         }
 

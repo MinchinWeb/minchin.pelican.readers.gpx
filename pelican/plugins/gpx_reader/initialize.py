@@ -25,6 +25,7 @@ from .constants import (
     GPX_STATUS,
     LOG_PREFIX,
     MONTH_GPX_SAVE_AS,
+    WEEK_GPX_SAVE_AS,
     YEAR_GPX_SAVE_AS,
 )
 
@@ -49,6 +50,7 @@ def check_settings(pelican):
         "GPX_SIMPLIFY_DISTANCE",
         "GPX_STATUS",
         "MONTH_GPX_SAVE_AS",
+        "WEEK_GPX_SAVE_AS",
         "YEAR_GPX_SAVE_AS",
 
     ]:
