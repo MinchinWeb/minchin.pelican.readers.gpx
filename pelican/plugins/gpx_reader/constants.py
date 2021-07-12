@@ -33,12 +33,14 @@ WEEK_GPX_SAVE_AS = "gpx/{heatmap}/combined/{date:%G}-W{date:%V}.gpx"  # see http
 # WEEK_GPX_SAVE_AS = "gpx/{heatmap}/combined/{date.isocalendar().year}-W{date.isocalendar().week}.gpx"
 DAY_GPX_SAVE_AS = "gpx/{heatmap}/combined/{date:%Y}-{date:%m}-{date:%d}.gpx"
 GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/{slug}.png"
-# ALL_GPX_IMAGE_SAVE_AS = "images/gpx/combined/{heatmap}/all.png"
-# YEAR_GPX_IMAGE_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}.png"
-# QUARTER_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}-Q{quarter}.png"
-# MONTH_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}-{date:%m}.png"
-# WEEK_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%G}-W{date:%V}.png"
-# DAY_IMAGE_GPX_SAVE_AS = "images/gpx/combined/{heatmap}/{date:%Y}-{date:%m}-{date:%d}.png"
+ALL_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/all.png"
+YEAR_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}.png"
+# QUARTER_IGPX_MAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}-Q{quarter}.png"
+MONTH_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}-{date:%m}.png"
+WEEK_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%G}-W{date:%V}.png"
+DAY_GPX_IMAGE_SAVE_AS = (
+    "images/gpx/{heatmap}/combined/{date:%Y}-{date:%m}-{date:%d}.png"
+)
 
 # per heatmap
 GPX_SCALE = 250  # meters per pixel (approx.)
@@ -63,7 +65,9 @@ def test_enabled(log=True):
         if log:
             logger.info(
                 "%s enabled, version %s, heatmap version %s",
-                LOG_PREFIX, __version__, heatmap.__version__
+                LOG_PREFIX,
+                __version__,
+                heatmap.__version__,
             )
         return True
     else:

@@ -4,6 +4,7 @@ from functools import partial
 from itertools import groupby
 import logging
 from operator import attrgetter
+from pathlib import Path
 
 from pelican.generators import ArticlesGenerator, CachingGenerator
 from pelican.utils import order_content
@@ -12,6 +13,7 @@ from . import signals
 from .constants import LOG_PREFIX
 from .contents import GPX as GPXContent
 from .gpx import combine_gpx
+from .heatmap import generate_heatmap
 
 logger = logging.getLogger(__name__)
 gpx_count = 0
@@ -126,22 +128,35 @@ class GPXGenerator(CachingGenerator):
                 "%s Generate output for %s (%s)", LOG_PREFIX, gpx_article, heatmap
             )
 
-            save_as = getattr(gpx_article, f"gpx_{heatmap}_save_as")
+            xml_save_as = getattr(gpx_article, f"gpx_{heatmap}_save_as")
+            heatmap_save_as = getattr(gpx_article, f"gpx_{heatmap}_image")
             xml = getattr(gpx_article, f"gpx_{heatmap}_trimmed")
 
-            writer.write_xml(
-                name=save_as,
-                template=None,
-                context=self.context.copy(),
-                xml=xml,
-                gpx=gpx_article,
-                heatmap=heatmap,
-            )
+            if xml:
+                writer.write_xml(
+                    name=xml_save_as,
+                    template=None,
+                    context=self.context.copy(),
+                    xml=xml,
+                    gpx=gpx_article,
+                    heatmap=heatmap,
+                )
+
+                writer.write_image(
+                    name=heatmap_save_as,
+                    template=None,
+                    context=self.context.copy(),
+                    image=generate_heatmap(
+                        Path(self.output_path).resolve() / xml_save_as,
+                        self.settings["GPX_HEATMAPS"][heatmap],
+                    ),
+                )
 
     def geneate_one_period_inner(
         self,
         gpxes,
-        save_as_setting,
+        xml_save_as_setting,
+        heatmap_save_as_setting,
         date,
         gpx_log_name,
         heatmap_key,
@@ -169,7 +184,12 @@ class GPXGenerator(CachingGenerator):
             writer (pelican.writers.Writer): class that does the actual write
                 to disk
         """
-        save_as = save_as_setting.format(
+        xml_save_as = xml_save_as_setting.format(
+            # date=date,  # fixed in https://github.com/getpelican/pelican/pull/2902
+            date=datetime(date.year, date.month, date.day),
+            heatmap=heatmap_key,
+        )
+        heatmap_save_as = heatmap_save_as_setting.format(
             # date=date,  # fixed in https://github.com/getpelican/pelican/pull/2902
             date=datetime(date.year, date.month, date.day),
             heatmap=heatmap_key,
@@ -184,14 +204,30 @@ class GPXGenerator(CachingGenerator):
 
         if combined_gpx:
             writer.write_xml(
-                name=save_as,
+                name=xml_save_as,
                 template=None,
                 context=local_context,
                 xml=combined_gpx.to_xml(),
             )
 
+            writer.write_image(
+                name=heatmap_save_as,
+                template=None,
+                context=local_context,
+                image=generate_heatmap(
+                    Path(self.output_path).resolve() / xml_save_as,
+                    self.settings["GPX_HEATMAPS"][heatmap_key],
+                ),
+            )
+
     def generate_one_period(
-        self, dates, period_key, heatmap_key, save_as_setting, writer
+        self,
+        dates,
+        period_key,
+        heatmap_key,
+        xml_save_as_setting,
+        heatmap_save_as_setting,
+        writer,
     ):
         """
         Generate combined GPX for a single grouping.
@@ -204,7 +240,8 @@ class GPXGenerator(CachingGenerator):
         if period_key == period_date_key["all"] and dates:
             self.geneate_one_period_inner(
                 gpxes=dates,
-                save_as_setting=save_as_setting,
+                xml_save_as_setting=xml_save_as_setting,
+                heatmap_save_as_setting=heatmap_save_as_setting,
                 date=dates[0].date,
                 gpx_log_name="all",
                 heatmap_key=heatmap_key,
@@ -237,7 +274,8 @@ class GPXGenerator(CachingGenerator):
 
                 self.geneate_one_period_inner(
                     gpxes=gpxes,
-                    save_as_setting=save_as_setting,
+                    xml_save_as_setting=xml_save_as_setting,
+                    heatmap_save_as_setting=heatmap_save_as_setting,
                     date=archive[0].date,
                     gpx_log_name=gpx_log_name,
                     heatmap_key=heatmap_key,
@@ -262,12 +300,23 @@ class GPXGenerator(CachingGenerator):
             "week": self.settings["WEEK_GPX_SAVE_AS"],
             "day": self.settings["DAY_GPX_SAVE_AS"],
         }
+        period_heatmap_save_as = {
+            "all": self.settings["ALL_GPX_IMAGE_SAVE_AS"],
+            "year": self.settings["YEAR_GPX_IMAGE_SAVE_AS"],
+            # "quarter": self.settings["QUARTER_GPX_IMAGE_SAVE_AS"],
+            "month": self.settings["MONTH_GPX_IMAGE_SAVE_AS"],
+            "week": self.settings["WEEK_GPX_IMAGE_SAVE_AS"],
+            "day": self.settings["DAY_GPX_IMAGE_SAVE_AS"],
+        }
 
         for period in period_save_as.keys():
-            save_as = period_save_as[period]
-            if save_as:
+            xml_save_as = period_save_as[period]
+            heatmap_save_as = period_heatmap_save_as[period]
+            if xml_save_as:
                 key = period_date_key[period]
-                self.generate_one_period(self.dates, key, heatmap, save_as, writer)
+                self.generate_one_period(
+                    self.dates, key, heatmap, xml_save_as, heatmap_save_as, writer
+                )
 
     def generate_output(self, writer):
         """
