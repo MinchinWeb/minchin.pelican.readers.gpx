@@ -81,5 +81,48 @@ class EverythingWriter(Writer):
             context=localcontext,
         )
 
-    def write_heatmap(self, xml, output_path):
-        pass
+    def write_image(
+        self, name, template, context, image, override_output=False, **kwargs
+    ):
+        """
+        Write a (Pillow) image to disk.
+
+        Args:
+        -----
+            name: output filename. Output file format is derived from this.
+            template: currently ignored
+            context: dict that would normally be passed to the templates
+            image: Pillow image to write to disk
+            override_output: boolean telling if we can override previous output
+                with the same name (and if next files written with the same
+                name should be skipped to keep that one)
+            **kwargs: currently ignored
+        """
+        if (
+            name is False
+            or name == ""
+            or not name
+            or not is_selected_for_writing(
+                self.settings, os.path.join(self.output_path, name)
+            )
+        ):
+            return
+
+        localcontext = context.copy()
+        localcontext["output_file"] = name
+        localcontext.update(kwargs)
+
+        output_file = Path(self.output_path).resolve() / name
+        # create root folders, if they don't already exist
+        output_file.parent.mkdir(exist_ok=True, parents=True)
+        image_format = output_file.suffix.removeprefix(".").lower()
+
+        image.save(output_file, format=image_format)
+
+        logger.info("%s Writing image %s", LOG_PREFIX, output_file)
+        # Send a signal to say we're writing a file with some specific
+        # local context.
+        signals.image_content_written.send(
+            output_file,
+            context=localcontext,
+        )
