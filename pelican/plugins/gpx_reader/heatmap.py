@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from ._vendor.heatmap import heatmap
 from .constants import INDENT
@@ -30,7 +31,7 @@ class heatmap_options_base(object):
         self.background_image = heatmap_settings["background_image"]
 
 
-def generate_heatmap(gpx_file_in, heatmap_image_out, heatmap_raw_settings):
+def generate_heatmap(gpx_file_in, heatmap_raw_settings):
     # hide heatmap logging calls
     old_logging_level = logging.getLogger().getEffectiveLevel()
     logging.getLogger().setLevel(logging.WARNING)
@@ -38,7 +39,7 @@ def generate_heatmap(gpx_file_in, heatmap_image_out, heatmap_raw_settings):
     heatmap_config = heatmap.Configuration()
     heatmap_options = heatmap_options_base(heatmap_raw_settings)
     heatmap_options.files = [
-        str(gpx_file_in.resolve()),
+        str(Path(gpx_file_in).resolve()),
     ]
     heatmap_config.set_from_options(options=heatmap_options)
     heatmap_config.fill_missing()
@@ -47,9 +48,12 @@ def generate_heatmap(gpx_file_in, heatmap_image_out, heatmap_raw_settings):
     heatmap_image = heatmap.ImageMaker(heatmap_config).make_image(heatmap_matrix)
     # reset logging level
     logging.getLogger().setLevel(old_logging_level)
-    logger.debug(f"{INDENT}Heatmap file at {heatmap_image_out}")
+    # logger.debug(f"{INDENT}Heatmap file at {heatmap_image_out}")
 
-    heatmap_image.save(heatmap_image_out, format="png")
+    return heatmap_image
+
+    # heatmap_image.save(heatmap_image_out, format="png")
+
     # heatmap_image_buffer = BytesIO()
     # heatmap_image.save(heatmap_image_buffer, format="png")
     # heatmap_image_b64 = bytes(

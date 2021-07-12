@@ -1,6 +1,10 @@
 import logging
 
 from .constants import (
+    ALL_GPX_IMAGE_SAVE_AS,
+    ALL_GPX_SAVE_AS,
+    DAY_GPX_IMAGE_SAVE_AS,
+    DAY_GPX_SAVE_AS,
     GPX_AUTHOR,
     GPX_BACKGROUND,
     GPX_BACKGROUND_IMAGE,
@@ -12,15 +16,22 @@ from .constants import (
     GPX_HEATMAPS,
     GPX_HSVA_MAX,
     GPX_HSVA_MIN,
+    GPX_IMAGE_SAVE_AS,
     GPX_KERNEL,
-    GPX_OUTPUT_FOLDER,
     GPX_PATHS,
     GPX_PROJECTION,
     GPX_RADIUS,
+    GPX_SAVE_AS,
     GPX_SCALE,
     GPX_SIMPLIFY_DISTANCE,
     GPX_STATUS,
     LOG_PREFIX,
+    MONTH_GPX_IMAGE_SAVE_AS,
+    MONTH_GPX_SAVE_AS,
+    WEEK_GPX_IMAGE_SAVE_AS,
+    WEEK_GPX_SAVE_AS,
+    YEAR_GPX_IMAGE_SAVE_AS,
+    YEAR_GPX_SAVE_AS,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,16 +41,27 @@ def check_settings(pelican):
     """
     Insert defaults in Pelican settings, as needed.
     """
-    logger.debug("%s massaging settings, setting defaults." % LOG_PREFIX)
+    logger.debug("%s massaging settings, setting defaults.", LOG_PREFIX)
     for key in [
+        "ALL_GPX_IMAGE_SAVE_AS",
+        "ALL_GPX_SAVE_AS",
+        "DAY_GPX_IMAGE_SAVE_AS",
+        "DAY_GPX_SAVE_AS",
         "GPX_AUTHOR",
         "GPX_CATEGORY",
         "GPX_EXCLUDES",
-        "GPX_STATUS",
-        "GPX_OUTPUT_FOLDER",
-        "GPX_PATHS",
-        "GPX_SIMPLIFY_DISTANCE",
         "GPX_HEATMAPS",
+        "GPX_IMAGE_SAVE_AS",
+        "GPX_PATHS",
+        "GPX_SAVE_AS",
+        "GPX_SIMPLIFY_DISTANCE",
+        "GPX_STATUS",
+        "MONTH_GPX_IMAGE_SAVE_AS",
+        "MONTH_GPX_SAVE_AS",
+        "WEEK_GPX_IMAGE_SAVE_AS",
+        "WEEK_GPX_SAVE_AS",
+        "YEAR_GPX_IMAGE_SAVE_AS",
+        "YEAR_GPX_SAVE_AS",
     ]:
         if key not in pelican.settings.keys():
             pelican.settings[key] = eval(key)
@@ -50,9 +72,6 @@ def check_settings(pelican):
             pelican.settings["ARTICLE_EXCLUDES"].append(item)
         if item not in pelican.settings["PAGE_EXCLUDES"]:
             pelican.settings["PAGE_EXCLUDES"].append(item)
-
-    if "GPX_SAVE_AS" not in pelican.settings:
-        pelican.settings["GPX_SAVE_AS"] = pelican.settings["ARTICLE_SAVE_AS"]
 
     # if "compiled" in self.heatmaps.keys():
     #     logger.warn(
