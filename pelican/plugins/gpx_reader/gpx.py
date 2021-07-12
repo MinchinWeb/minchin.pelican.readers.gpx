@@ -109,10 +109,59 @@ def combine_gpx(gpxes, log_name=None):
         logger.debug(
             f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
             f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
-            f"and {point_count:,} point{'s' if point_count != 1 else ''}."
+            f"and {point_count:,} point{'s' if point_count != 1 else ''}. "
+            f"{travel_length_km:,.1f} km long."
         )
-        logger.debug(f"{INDENT}Travel length: {travel_length_km:,.1f} km")
     return combined_gpx
+
+
+def clip_gpx(lat1, long1, lat2, long2, gpx, heatmap_name):
+    """
+    Trims a GPX file to bounds specified by (lat1, long1) and (lat2, long2).
+
+    Args:
+        lat1 (float):
+        long1 (float):
+        lat2 (float):
+        long2 (float):
+        gpx (gpxpy.gpx):
+        in_gpx_name (str): used in logging
+        heatmap_name (str): used in logging
+    """
+
+    minlat, minlong, maxlat, maxlong = min_max_lat_long(lat1, long1, lat2, long2)
+
+    cut_count = 0
+    for track in gpx.tracks:
+        for segment in track.segments:
+            cut_index = []
+            for index, point in enumerate(segment.points):
+                if point.latitude < minlat or point.latitude > maxlat:
+                    # remove point
+                    cut_index.append(index)
+                    cut_count = +1
+                elif point.longitude < minlong or point.longitude > maxlong:
+                    # remove point
+                    cut_index.append(index)
+                    cut_count = +1
+            # remove duplicates
+            cut_index = list(set(cut_index))
+            # remove points from the end of the list first
+            cut_index.sort(reverse=True)
+            for index in cut_index:
+                segment.remove_point(index)
+
+    logger.debug(
+        "%sTrimmed from %s, %s to %s, %s (%s). %s points removed.",
+        INDENT,
+        minlat,
+        minlong,
+        maxlat,
+        maxlong,
+        heatmap_name,
+        cut_count,
+    )
+    return gpx
 
 
 def generate_metadata(gpx, source_file, pelican_settings):
@@ -161,9 +210,9 @@ def generate_metadata(gpx, source_file, pelican_settings):
     logger.debug(
         f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
         f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
-        f"and {point_count:,} point{'s' if point_count != 1 else ''}."
+        f"and {point_count:,} point{'s' if point_count != 1 else ''}. "
+        f"{travel_length_km:,.1f} km long."
     )
-    logger.debug(f"{INDENT}Travel length: {travel_length_km:,.1f} km")
 
     metadata = {
         "title": f"GPX track for {source_file.name}",
@@ -190,13 +239,70 @@ def generate_metadata(gpx, source_file, pelican_settings):
         "gpx_length_km": travel_length_km,
     }
 
-    metadata["save_as"] = pelican_settings["GPX_SAVE_AS"].format(**metadata)
+    metadata["save_as"] = pelican_settings["GPX_SAVE_AS"].format(
+        heatmap="default", **metadata
+    )
 
     for k in pelican_settings["GPX_HEATMAPS"].keys():
         image_key = f"gpx_{k}_image"
+        trimmed_gpx_key = f"gpx_{k}_trimmed"
+        trimmed_gpx_save_as_key = f"gpx_{k}_save_as"
+
         metadata[image_key] = pelican_settings["GPX_IMAGE_SAVE_AS"].format(
             heatmap=k, **metadata
         )
+        metadata[trimmed_gpx_save_as_key] = pelican_settings["GPX_SAVE_AS"].format(
+            heatmap=k, **metadata
+        )
+
+        if pelican_settings["GPX_HEATMAPS"][k]["extent"] is None:
+            metadata[trimmed_gpx_key] = gpx.to_xml()
+        else:
+            metadata[trimmed_gpx_key] = clip_gpx(
+                *expand_trim_zone(
+                    *[
+                        float(x.removesuffix(","))
+                        for x in pelican_settings["GPX_HEATMAPS"][k]["extent"].split(
+                            " "
+                        )
+                    ]
+                ),
+                gpx,
+                k,
+            ).to_xml()
 
     metadata["date"] = str(metadata["date"])
     return metadata
+
+
+def expand_trim_zone(lat1, long1, lat2, long2):
+    """
+    Given the "official" trim line (as will be used for the generated heatmap),
+    expands the trim zone (as used by the GPX trimmer), so that (hopefully) all
+    paths the cross the zone edge are included.
+
+    Basic math is to add a 1/2 degree or 10% to each side, whichever is larger.
+    """
+    minlat, minlong, maxlat, maxlong = min_max_lat_long(lat1, long1, lat2, long2)
+
+    delta_lat = maxlat - minlat
+    delta_long = maxlong - minlong
+
+    sigma_lat = 0.5 + (delta_lat - 1.0) * 0.1
+    sigma_long = 0.5 + (delta_long - 1.0) * 0.1
+
+    return (
+        minlat - sigma_lat,
+        minlong - sigma_long,
+        maxlat + sigma_lat,
+        maxlong + sigma_long,
+    )
+
+
+def min_max_lat_long(lat1, long1, lat2, long2):
+    minlat = min(lat1, lat2)
+    maxlat = max(lat1, lat2)
+    minlong = min(long1, long2)
+    maxlong = max(long1, long2)
+
+    return minlat, minlong, maxlat, maxlong

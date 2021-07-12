@@ -38,6 +38,7 @@ AUTHOR = find_meta(*META_PATH, meta_key="author")
 AUTHOR_EMAIL = find_meta(*META_PATH, meta_key="email")
 URL = find_meta(*META_PATH, meta_key="url")
 LICENSE = find_meta(*META_PATH, meta_key="license")
+PYTHON_REQUIRES = ">= 3.9"  # uses "str.removesuffix()"
 
 PACKAGES = setuptools.find_namespace_packages(
     exclude=("vendor_src", "test-site", "dist", "build")
@@ -106,10 +107,10 @@ CLASSIFIERS = [
     # 'Programming Language :: Python :: 3.2',
     # 'Programming Language :: Python :: 3.3',
     # 'Programming Language :: Python :: 3.4',
-    "Programming Language :: Python :: 3.5",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
+    # "Programming Language :: Python :: 3.5",
+    # "Programming Language :: Python :: 3.6",
+    # "Programming Language :: Python :: 3.7",
+    # "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3 :: Only",
     "Natural Language :: English",
@@ -148,6 +149,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRA_REQUIRES,
+    python_requires=PYTHON_REQUIRES,
     platforms="any",
     classifiers=CLASSIFIERS,
     # namespace_packages=[
