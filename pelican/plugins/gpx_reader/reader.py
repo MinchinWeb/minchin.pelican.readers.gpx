@@ -7,6 +7,7 @@ from pelican.readers import BaseReader
 from pelican.utils import pelican_open
 
 from .constants import INDENT, LOG_PREFIX, test_enabled
+from .exceptions import TooShortGPXException
 from .gpx import clean_gpx, generate_metadata, simplify_gpx
 
 logger = logging.getLogger(__name__)
@@ -37,11 +38,21 @@ class GPXReader(BaseReader):
 
         content = gpx.to_xml()
 
-        metadata = generate_metadata(
-            gpx=gpx,
-            source_file=source_file,
-            pelican_settings=self.settings,
-        )
+        try:
+            metadata = generate_metadata(
+                gpx=gpx,
+                source_file=source_file,
+                pelican_settings=self.settings,
+            )
+        except TooShortGPXException as e:
+            logger.info(
+                "%sGPX tracks is too short. Skipping file (%s)",
+                INDENT,
+                source_file.name,
+            )
+            # dummy information to keep Pelican from crashing, but to skip this
+            # file
+            return None, {"heatmap": None}
 
         parsed_metadata = {}
         for key, value in metadata.items():

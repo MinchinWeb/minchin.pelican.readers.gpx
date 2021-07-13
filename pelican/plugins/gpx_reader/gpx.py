@@ -19,6 +19,7 @@ except ImportError:
         TimezoneFinder = None
 
 from .constants import INDENT
+from .exceptions import TooShortGPXException
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +186,18 @@ def generate_metadata(gpx, source_file, pelican_settings):
 
     travel_length_km = gpx.length_2d() / 1000
 
+    logger.debug(
+        f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
+        f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
+        f"and {point_count:,} point{'s' if point_count != 1 else ''}. "
+        f"{travel_length_km:,.1f} km long."
+    )
+    
+    if point_count < 2:
+        raise TooShortGPXException(point_count)
+
+    # TODO: deal with gpx'es that have no tracks, or tracks with no segments,
+    #       or segments with no points
     first_point = gpx.tracks[0].segments[0].points[0]
     last_point = gpx.tracks[-1].segments[-1].points[-1]
 
@@ -207,12 +220,6 @@ def generate_metadata(gpx, source_file, pelican_settings):
         end_time = time_bounds.end_time
 
     logger.debug(f"{INDENT}Start date is {start_time}")
-    logger.debug(
-        f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
-        f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
-        f"and {point_count:,} point{'s' if point_count != 1 else ''}. "
-        f"{travel_length_km:,.1f} km long."
-    )
 
     metadata = {
         "title": f"GPX track for {source_file.name}",
