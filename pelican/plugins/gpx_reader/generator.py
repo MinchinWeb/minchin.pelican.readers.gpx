@@ -13,6 +13,7 @@ from . import signals
 from .constants import LOG_PREFIX
 from .contents import GPX as GPXContent
 from .gpx import combine_gpx
+from .hasher import gpx_hash
 from .heatmap import generate_heatmap
 
 logger = logging.getLogger(__name__)
@@ -184,19 +185,22 @@ class GPXGenerator(CachingGenerator):
             writer (pelican.writers.Writer): class that does the actual write
                 to disk
         """
+        combined_gpx = combine_gpx(
+            [getattr(x, f"gpx_{heatmap_key}_trimmed") for x in gpxes],
+            f"{gpx_log_name} ({heatmap_key})",
+        )
+        my_hash = gpx_hash(combined_gpx.to_xml())
         xml_save_as = xml_save_as_setting.format(
             # date=date,  # fixed in https://github.com/getpelican/pelican/pull/2902
             date=datetime(date.year, date.month, date.day),
             heatmap=heatmap_key,
+            hash=my_hash,
         )
         heatmap_save_as = heatmap_save_as_setting.format(
             # date=date,  # fixed in https://github.com/getpelican/pelican/pull/2902
             date=datetime(date.year, date.month, date.day),
             heatmap=heatmap_key,
-        )
-        combined_gpx = combine_gpx(
-            [getattr(x, f"gpx_{heatmap_key}_trimmed") for x in gpxes],
-            f"{gpx_log_name} ({heatmap_key})",
+            hash=my_hash,
         )
         local_context = context.copy()
         local_context["period"] = context_period
@@ -210,15 +214,18 @@ class GPXGenerator(CachingGenerator):
                 xml=combined_gpx.to_xml(),
             )
 
-            writer.write_image(
-                name=heatmap_save_as,
-                template=None,
-                context=local_context,
-                image=generate_heatmap(
-                    Path(self.output_path).resolve() / xml_save_as,
-                    self.settings["GPX_HEATMAPS"][heatmap_key],
-                ),
-            )
+            if Path(heatmap_save_as).exists():
+                logger("%s Image already exists: %s (for %s)", LOG_PREFIX, heatmap_save_as, xml_save_as)
+            else:
+                writer.write_image(
+                    name=heatmap_save_as,
+                    template=None,
+                    context=local_context,
+                    image=generate_heatmap(
+                        Path(self.output_path).resolve() / xml_save_as,
+                        self.settings["GPX_HEATMAPS"][heatmap_key],
+                    ),
+                )
 
     def generate_one_period(
         self,

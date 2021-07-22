@@ -32,15 +32,22 @@ MONTH_GPX_SAVE_AS = "gpx/{heatmap}/combined/{date:%Y}-{date:%m}.gpx"
 WEEK_GPX_SAVE_AS = "gpx/{heatmap}/combined/{date:%G}-W{date:%V}.gpx"  # see https://github.com/getpelican/pelican/pull/2902
 # WEEK_GPX_SAVE_AS = "gpx/{heatmap}/combined/{date.isocalendar().year}-W{date.isocalendar().week}.gpx"
 DAY_GPX_SAVE_AS = "gpx/{heatmap}/combined/{date:%Y}-{date:%m}-{date:%d}.gpx"
-GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/{slug}.png"
-ALL_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/all.png"
-YEAR_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}.png"
-# QUARTER_IGPX_MAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}-Q{quarter}.png"
-MONTH_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}-{date:%m}.png"
-WEEK_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%G}-W{date:%V}.png"
-DAY_GPX_IMAGE_SAVE_AS = (
-    "images/gpx/{heatmap}/combined/{date:%Y}-{date:%m}-{date:%d}.png"
-)
+# GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/{slug}.png"
+# ALL_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/all.png"
+# YEAR_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}.png"
+# # QUARTER_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}-Q{quarter}.png"
+# MONTH_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%Y}-{date:%m}.png"
+# WEEK_GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/combined/{date:%G}-W{date:%V}.png"
+# DAY_GPX_IMAGE_SAVE_AS = (
+#     "images/gpx/{heatmap}/combined/{date:%Y}-{date:%m}-{date:%d}.png"
+# )
+GPX_IMAGE_SAVE_AS = "images/gpx/{heatmap}/{hash:.1}/{hash}.png"
+ALL_GPX_IMAGE_SAVE_AS = GPX_IMAGE_SAVE_AS
+YEAR_GPX_IMAGE_SAVE_AS = GPX_IMAGE_SAVE_AS
+# QUARTER_GPX_IMAGE_SAVE_AS = GPX_IMAGE_SAVE_AS
+MONTH_GPX_IMAGE_SAVE_AS = GPX_IMAGE_SAVE_AS
+WEEK_GPX_IMAGE_SAVE_AS = GPX_IMAGE_SAVE_AS
+DAY_GPX_IMAGE_SAVE_AS = GPX_IMAGE_SAVE_AS
 
 # per heatmap
 GPX_SCALE = 250  # meters per pixel (approx.)

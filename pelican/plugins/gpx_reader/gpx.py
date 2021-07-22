@@ -8,8 +8,6 @@ import logging
 import gpxpy
 from pytz import timezone
 
-from .constants import LOG_PREFIX
-
 try:
     from timezonefinder import TimezoneFinder
 except ImportError:
@@ -18,8 +16,9 @@ except ImportError:
     except ImportError:
         TimezoneFinder = None
 
-from .constants import INDENT
+from .constants import INDENT, LOG_PREFIX
 from .exceptions import TooShortGPXException
+from .hasher import gpx_hash
 
 logger = logging.getLogger(__name__)
 
@@ -255,13 +254,7 @@ def generate_metadata(gpx, source_file, pelican_settings):
         image_key = f"gpx_{heatmap}_image"
         trimmed_gpx_key = f"gpx_{heatmap}_trimmed"
         trimmed_gpx_save_as_key = f"gpx_{heatmap}_save_as"
-
-        metadata[image_key] = pelican_settings["GPX_IMAGE_SAVE_AS"].format(
-            heatmap=heatmap, **metadata
-        )
-        metadata[trimmed_gpx_save_as_key] = pelican_settings["GPX_SAVE_AS"].format(
-            heatmap=heatmap, **metadata
-        )
+        trimmed_gpx_hash_key = f"gpx_{heatmap}_hash"
 
         if pelican_settings["GPX_HEATMAPS"][heatmap]["extent"] is None:
             metadata[trimmed_gpx_key] = gpx.to_xml()
@@ -270,14 +263,24 @@ def generate_metadata(gpx, source_file, pelican_settings):
                 *expand_trim_zone(
                     *[
                         float(x.removesuffix(","))
-                        for x in pelican_settings["GPX_HEATMAPS"][heatmap]["extent"].split(
-                            " "
-                        )
+                        for x in pelican_settings["GPX_HEATMAPS"][heatmap][
+                            "extent"
+                        ].split(" ")
                     ]
                 ),
                 gpx,
                 heatmap,
             ).to_xml()
+
+        my_hash = gpx_hash(metadata[trimmed_gpx_key])
+
+        metadata[trimmed_gpx_hash_key] = my_hash
+        metadata[image_key] = pelican_settings["GPX_IMAGE_SAVE_AS"].format(
+            heatmap=heatmap, hash=my_hash, **metadata
+        )
+        metadata[trimmed_gpx_save_as_key] = pelican_settings["GPX_SAVE_AS"].format(
+            heatmap=heatmap, hash=my_hash, **metadata
+        )
 
     metadata["date"] = str(metadata["date"])
     return metadata
