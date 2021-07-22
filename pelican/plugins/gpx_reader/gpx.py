@@ -192,7 +192,7 @@ def generate_metadata(gpx, source_file, pelican_settings):
         f"and {point_count:,} point{'s' if point_count != 1 else ''}. "
         f"{travel_length_km:,.1f} km long."
     )
-    
+
     if point_count < 2:
         raise TooShortGPXException(point_count)
 
@@ -246,36 +246,37 @@ def generate_metadata(gpx, source_file, pelican_settings):
         "gpx_length_km": travel_length_km,
     }
 
+    # TODO: switch this to generated article
     metadata["save_as"] = pelican_settings["GPX_SAVE_AS"].format(
         heatmap="default", **metadata
     )
 
-    for k in pelican_settings["GPX_HEATMAPS"].keys():
-        image_key = f"gpx_{k}_image"
-        trimmed_gpx_key = f"gpx_{k}_trimmed"
-        trimmed_gpx_save_as_key = f"gpx_{k}_save_as"
+    for heatmap in pelican_settings["GPX_HEATMAPS"].keys():
+        image_key = f"gpx_{heatmap}_image"
+        trimmed_gpx_key = f"gpx_{heatmap}_trimmed"
+        trimmed_gpx_save_as_key = f"gpx_{heatmap}_save_as"
 
         metadata[image_key] = pelican_settings["GPX_IMAGE_SAVE_AS"].format(
-            heatmap=k, **metadata
+            heatmap=heatmap, **metadata
         )
         metadata[trimmed_gpx_save_as_key] = pelican_settings["GPX_SAVE_AS"].format(
-            heatmap=k, **metadata
+            heatmap=heatmap, **metadata
         )
 
-        if pelican_settings["GPX_HEATMAPS"][k]["extent"] is None:
+        if pelican_settings["GPX_HEATMAPS"][heatmap]["extent"] is None:
             metadata[trimmed_gpx_key] = gpx.to_xml()
         else:
             metadata[trimmed_gpx_key] = clip_gpx(
                 *expand_trim_zone(
                     *[
                         float(x.removesuffix(","))
-                        for x in pelican_settings["GPX_HEATMAPS"][k]["extent"].split(
+                        for x in pelican_settings["GPX_HEATMAPS"][heatmap]["extent"].split(
                             " "
                         )
                     ]
                 ),
                 gpx,
-                k,
+                heatmap,
             ).to_xml()
 
     metadata["date"] = str(metadata["date"])
