@@ -4,11 +4,16 @@ from pathlib import Path
 from posixpath import join as posix_join
 from urllib.parse import urljoin
 
-from pelican.utils import is_selected_for_writing
 from pelican.writers import Writer
 
 from . import signals
 from .constants import LOG_PREFIX
+
+try:
+    from pelican.utils import is_selected_for_writing
+except ImportError:
+    # function was removed in Pelican 4.9.0
+    is_selected_for_writing = lambda _1, _2: True
 
 logger = logging.getLogger(__name__)
 
