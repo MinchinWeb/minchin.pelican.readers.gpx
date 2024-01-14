@@ -164,36 +164,13 @@ def clip_gpx(lat1, long1, lat2, long2, gpx, heatmap_name):
     return gpx
 
 
-def generate_metadata(gpx, source_file, pelican_settings):
+def get_start_end_times(gpx, pelican_settings):
     if TimezoneFinder:
         tz_finder = TimezoneFinder()
     else:
         tz_finder = None
 
-    latlong_bounds = gpx.get_bounds()
-    elev_bounds = gpx.get_elevation_extremes()
     time_bounds = gpx.get_time_bounds()
-
-    track_count = len(gpx.tracks)
-    segment_count = 0
-    point_count = 0
-
-    for track in gpx.tracks:
-        segment_count += len(track.segments)
-        for segment in track.segments:
-            point_count += len(segment.points)
-
-    travel_length_km = gpx.length_2d() / 1000
-
-    logger.debug(
-        f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
-        f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
-        f"and {point_count:,} point{'s' if point_count != 1 else ''}. "
-        f"{travel_length_km:,.1f} km long."
-    )
-
-    if point_count < 2:
-        raise TooShortGPXException(point_count)
 
     # TODO: deal with gpx'es that have no tracks, or tracks with no segments,
     #       or segments with no points
@@ -220,6 +197,39 @@ def generate_metadata(gpx, source_file, pelican_settings):
 
     logger.debug(f"{INDENT}Start date is {start_time}")
 
+    return start_time, end_time
+
+
+def generate_metadata(gpx, source_file, pelican_settings):
+    latlong_bounds = gpx.get_bounds()
+    elev_bounds = gpx.get_elevation_extremes()
+    # time_bounds = gpx.get_time_bounds()
+
+    track_count = len(gpx.tracks)
+    segment_count = 0
+    point_count = 0
+
+    for track in gpx.tracks:
+        segment_count += len(track.segments)
+        for segment in track.segments:
+            point_count += len(segment.points)
+
+    travel_length_km = gpx.length_2d() / 1000
+
+    logger.debug(
+        f"{INDENT}{track_count:,} track{'s' if track_count != 1 else ''}, "
+        f"{segment_count:,} segment{'s' if segment_count != 1 else ''}, "
+        f"and {point_count:,} point{'s' if point_count != 1 else ''}. "
+        f"{travel_length_km:,.1f} km long."
+    )
+
+    if point_count < 2:
+        raise TooShortGPXException(point_count)
+
+    start_time, end_time = get_start_end_times(
+        gpx=gpx, pelican_settings=pelican_settings
+    )
+
     metadata = {
         "title": f"GPX track for {source_file.name}",
         "category": pelican_settings["GPX_CATEGORY"],
@@ -243,6 +253,7 @@ def generate_metadata(gpx, source_file, pelican_settings):
         "gpx_segments": segment_count,
         "gpx_points": point_count,
         "gpx_length_km": travel_length_km,
+        "valid": True,
     }
 
     # TODO: switch this to generated article

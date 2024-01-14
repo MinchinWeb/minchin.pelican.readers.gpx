@@ -129,6 +129,11 @@ class GPXGenerator(CachingGenerator):
                 "%s Generate output for %s (%s)", LOG_PREFIX, gpx_article, heatmap
             )
 
+            # skip invalid files (usually, too short)
+            is_valid = getattr(gpx_article, "valid")
+            if not is_valid:
+                continue
+
             xml_save_as = getattr(gpx_article, f"gpx_{heatmap}_save_as")
             heatmap_save_as = getattr(gpx_article, f"gpx_{heatmap}_image")
             xml = getattr(gpx_article, f"gpx_{heatmap}_trimmed")
@@ -186,7 +191,11 @@ class GPXGenerator(CachingGenerator):
                 to disk
         """
         combined_gpx = combine_gpx(
-            [getattr(x, f"gpx_{heatmap_key}_trimmed") for x in gpxes],
+            [
+                getattr(x, f"gpx_{heatmap_key}_trimmed")
+                for x in gpxes
+                if getattr(x, "valid")
+            ],
             f"{gpx_log_name} ({heatmap_key})",
         )
         my_hash = gpx_hash(combined_gpx.to_xml())
@@ -215,7 +224,12 @@ class GPXGenerator(CachingGenerator):
             )
 
             if Path(heatmap_save_as).exists():
-                logger("%s Image already exists: %s (for %s)", LOG_PREFIX, heatmap_save_as, xml_save_as)
+                logger(
+                    "%s Image already exists: %s (for %s)",
+                    LOG_PREFIX,
+                    heatmap_save_as,
+                    xml_save_as,
+                )
             else:
                 writer.write_image(
                     name=heatmap_save_as,
