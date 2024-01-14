@@ -45,7 +45,7 @@ PACKAGES = setuptools.find_namespace_packages(
 )
 
 INSTALL_REQUIRES = [
-    "pelican",
+    "pelican >= 4.7.0",
     "gpxpy",
     # also vendorized heatmap -- https://github.com/sethoscope/heatmap
     "osmviz",  # required by heatmap

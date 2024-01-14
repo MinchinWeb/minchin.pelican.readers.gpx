@@ -200,14 +200,12 @@ class GPXGenerator(CachingGenerator):
         )
         my_hash = gpx_hash(combined_gpx.to_xml())
         xml_save_as = xml_save_as_setting.format(
-            # date=date,  # fixed in https://github.com/getpelican/pelican/pull/2902
-            date=datetime(date.year, date.month, date.day),
+            date=date,
             heatmap=heatmap_key,
             hash=my_hash,
         )
         heatmap_save_as = heatmap_save_as_setting.format(
-            # date=date,  # fixed in https://github.com/getpelican/pelican/pull/2902
-            date=datetime(date.year, date.month, date.day),
+            date=date,
             heatmap=heatmap_key,
             hash=my_hash,
         )
