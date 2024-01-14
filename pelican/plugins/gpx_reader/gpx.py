@@ -115,7 +115,7 @@ def combine_gpx(gpxes, log_name=None):
     return combined_gpx
 
 
-def clip_gpx(lat1, long1, lat2, long2, gpx, heatmap_name):
+def clip_gpx(lat_1, long_1, lat_2, long_2, gpx, heatmap_name):
     """
     Trims a GPX file to bounds specified by (lat1, long1) and (lat2, long2).
 
@@ -129,24 +129,24 @@ def clip_gpx(lat1, long1, lat2, long2, gpx, heatmap_name):
         heatmap_name (str): used in logging
     """
 
-    minlat, minlong, maxlat, maxlong = min_max_lat_long(lat1, long1, lat2, long2)
+    min_lat, min_long, max_lat, max_long = min_max_lat_long(lat_1, long_1, lat_2, long_2)
 
     cut_count = 0
     for track in gpx.tracks:
         for segment in track.segments:
             cut_index = []
             for index, point in enumerate(segment.points):
-                if point.latitude < minlat or point.latitude > maxlat:
+                if point.latitude < min_lat or point.latitude > max_lat:
                     # remove point
                     cut_index.append(index)
                     cut_count = +1
-                elif point.longitude < minlong or point.longitude > maxlong:
+                elif point.longitude < min_long or point.longitude > max_long:
                     # remove point
                     cut_index.append(index)
                     cut_count = +1
             # remove duplicates
             cut_index = list(set(cut_index))
-            # remove points from the end of the list first
+            # remove points from the end of the list first, due to how indexing works
             cut_index.sort(reverse=True)
             for index in cut_index:
                 segment.remove_point(index)
@@ -154,10 +154,10 @@ def clip_gpx(lat1, long1, lat2, long2, gpx, heatmap_name):
     logger.debug(
         "%sTrimmed from %s, %s to %s, %s (%s). %s points removed.",
         INDENT,
-        minlat,
-        minlong,
-        maxlat,
-        maxlong,
+        min_lat,
+        min_long,
+        max_lat,
+        max_long,
         heatmap_name,
         cut_count,
     )
@@ -297,7 +297,7 @@ def generate_metadata(gpx, source_file, pelican_settings):
     return metadata
 
 
-def expand_trim_zone(lat1, long1, lat2, long2):
+def expand_trim_zone(lat_1, long_1, lat_2, long_2):
     """
     Given the "official" trim line (as will be used for the generated heatmap),
     expands the trim zone (as used by the GPX trimmer), so that (hopefully) all
@@ -305,26 +305,26 @@ def expand_trim_zone(lat1, long1, lat2, long2):
 
     Basic math is to add a 1/2 degree or 10% to each side, whichever is larger.
     """
-    minlat, minlong, maxlat, maxlong = min_max_lat_long(lat1, long1, lat2, long2)
+    min_lat, min_long, max_lat, max_long = min_max_lat_long(lat_1, long_1, lat_2, long_2)
 
-    delta_lat = maxlat - minlat
-    delta_long = maxlong - minlong
+    delta_lat = max_lat - min_lat
+    delta_long = max_long - min_long
 
     sigma_lat = 0.5 + (delta_lat - 1.0) * 0.1
     sigma_long = 0.5 + (delta_long - 1.0) * 0.1
 
     return (
-        minlat - sigma_lat,
-        minlong - sigma_long,
-        maxlat + sigma_lat,
-        maxlong + sigma_long,
+        min_lat - sigma_lat,
+        min_long - sigma_long,
+        max_lat + sigma_lat,
+        max_long + sigma_long,
     )
 
 
-def min_max_lat_long(lat1, long1, lat2, long2):
-    minlat = min(lat1, lat2)
-    maxlat = max(lat1, lat2)
-    minlong = min(long1, long2)
-    maxlong = max(long1, long2)
+def min_max_lat_long(lat_1, long_1, lat_2, long_2):
+    min_lat = min(lat_1, lat_2)
+    max_lat = max(lat_1, lat_2)
+    min_long = min(long_1, long_2)
+    max_long = max(long_1, long_2)
 
-    return minlat, minlong, maxlat, maxlong
+    return min_lat, min_long, max_lat, max_long

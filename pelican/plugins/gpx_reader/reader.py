@@ -17,7 +17,8 @@ class GPXReader(BaseReader):
     """
     Pelican Reader for GPX files.
 
-    Rather than returning HTML, it returns the (raw) XML of the GPX file.
+    Rather than returning HTML (as is typically done with Pelican), it returns
+    the (raw, but cleaned) XML of the GPX file.
     """
 
     enabled = test_enabled(log=True)

@@ -158,7 +158,7 @@ class GPXGenerator(CachingGenerator):
                     ),
                 )
 
-    def geneate_one_period_inner(
+    def _geneate_one_period_inner(
         self,
         gpxes,
         xml_save_as_setting,
@@ -239,7 +239,7 @@ class GPXGenerator(CachingGenerator):
                     ),
                 )
 
-    def generate_one_period(
+    def _generate_one_period(
         self,
         dates,
         period_key,
@@ -254,10 +254,10 @@ class GPXGenerator(CachingGenerator):
         Combined GPXes are taken from dates (which is already sorted by date),
         grouped by "period_key", and written to "save_as".
         """
-        # add a signal somewhere here?
+        # TODO: add a signal somewhere here?
 
         if period_key == period_date_key["all"] and dates:
-            self.geneate_one_period_inner(
+            self._geneate_one_period_inner(
                 gpxes=dates,
                 xml_save_as_setting=xml_save_as_setting,
                 heatmap_save_as_setting=heatmap_save_as_setting,
@@ -291,7 +291,7 @@ class GPXGenerator(CachingGenerator):
 
                 gpx_log_name = " ".join([str(x) for x in context_period])
 
-                self.geneate_one_period_inner(
+                self._geneate_one_period_inner(
                     gpxes=gpxes,
                     xml_save_as_setting=xml_save_as_setting,
                     heatmap_save_as_setting=heatmap_save_as_setting,
@@ -308,7 +308,7 @@ class GPXGenerator(CachingGenerator):
         """
         Generate combined GPX files.
 
-        Generate per-year, (per-quarter), per-month, (per-week) and per-day
+        Generate per-year, (per-quarter), per-month, per-week, and per-day
         combined GPX files.
         """
         period_save_as = {
@@ -333,7 +333,7 @@ class GPXGenerator(CachingGenerator):
             heatmap_save_as = period_heatmap_save_as[period]
             if xml_save_as:
                 key = period_date_key[period]
-                self.generate_one_period(
+                self._generate_one_period(
                     self.dates, key, heatmap, xml_save_as, heatmap_save_as, writer
                 )
 
